@@ -102,7 +102,7 @@ export default function EventsPageClient() {
   const [selectedServiceIds, setSelectedServiceIds] = useState([])
   const [selectedSubscriptionIds, setSelectedSubscriptionIds] = useState([])
   const [selectedLocationIds, setSelectedLocationIds] = useState([])
-  const [includeLocationsInEvents, setIncludeLocationsInEvents] = useState(false)
+  const [includeLocationsInEvents, setIncludeLocationsInEvents] = useState(true)
   const [locationDataSource, setLocationDataSource] = useState('default')
   const [runHistory, setRunHistory] = useState([])
   const [selectedJobIds, setSelectedJobIds] = useState(new Set())
@@ -133,22 +133,29 @@ export default function EventsPageClient() {
   const defaultSessionDays = bookingSpacedDefaults?.bookingAtDaysFromCreate ?? 3
   const [bookingSessionDaysMin, setBookingSessionDaysMin] = useState(String(defaultSessionDays))
   const [bookingSessionDaysMax, setBookingSessionDaysMax] = useState(String(defaultSessionDays))
+  const [bookingSessionMode, setBookingSessionMode] = useState('fixed') // 'fixed' | 'range'
   const [profileMode, setProfileMode] = useState('auto') // 'auto' | 'selected'
   const [selectedProfileIds, setSelectedProfileIds] = useState([])
   const [availableProfiles, setAvailableProfiles] = useState([])
   const [profilesLoadError, setProfilesLoadError] = useState(null)
   const [productsPerOrderMin, setProductsPerOrderMin] = useState('1')
   const [productsPerOrderMax, setProductsPerOrderMax] = useState('3')
+  const [eventCustomNames, setEventCustomNames] = useState({})
+  const [eventOffsets, setEventOffsets] = useState({})
+  const [editingEventName, setEditingEventName] = useState(null)
+  const [editingDraftName, setEditingDraftName] = useState('')
+  const [editingDraftMode, setEditingDraftMode] = useState('fixed') // 'auto' | 'fixed' | 'range'
+  const [editingDraftUnit, setEditingDraftUnit] = useState('minutes') // 'minutes' | 'days'
+  const [editingDraftValue, setEditingDraftValue] = useState('')
+  const [editingDraftMin, setEditingDraftMin] = useState('')
+  const [editingDraftMax, setEditingDraftMax] = useState('')
 
   const journeyCountNum = useMemo(() => Math.max(1, Math.min(10, parseInt(journeyCount, 10) || 1)), [journeyCount])
-  const profilesCountNum = useMemo(() => Math.max(1, Math.min(50, parseInt(profilesCount, 10) || 5)), [profilesCount])
+  const profilesCountNum = useMemo(() => Math.max(1, Math.min(100, parseInt(profilesCount, 10) || 5)), [profilesCount])
   const productsPerOrderMinNum = useMemo(() => Math.max(1, Math.min(10, parseInt(productsPerOrderMin, 10) || 1)), [productsPerOrderMin])
   const productsPerOrderMaxNum = useMemo(() => Math.max(productsPerOrderMinNum, Math.min(10, parseInt(productsPerOrderMax, 10) || 3)), [productsPerOrderMax, productsPerOrderMinNum])
 
-  const journeyDecHold = useRepeatOnHold(useCallback(() => setJourneyCount((c) => String(Math.max(1, Math.min(10, (parseInt(c, 10) || 1) - 1)))), []))
-  const journeyIncHold = useRepeatOnHold(useCallback(() => setJourneyCount((c) => String(Math.min(10, (parseInt(c, 10) || 1) + 1))), []))
-  const profilesDecHold = useRepeatOnHold(useCallback(() => setProfilesCount((c) => String(Math.max(1, Math.min(50, (parseInt(c, 10) || 5) - 1)))), []))
-  const profilesIncHold = useRepeatOnHold(useCallback(() => setProfilesCount((c) => String(Math.min(50, (parseInt(c, 10) || 5) + 1))), []))
+  // (profilesCount uses a simple number input; no +/- hold buttons)
 
   const selectedJourneyId = getJourneyIdFromTypeAndVariant(journeyType, journeyVariant) || getJourneysByType(journeyType)[0]?.id
   const journey = getJourneyById(selectedJourneyId)
@@ -344,9 +351,23 @@ export default function EventsPageClient() {
   }, [])
 
   const toggleEvent = useCallback((eventName) => {
-    setSelectedEventNames((prev) =>
-      prev.includes(eventName) ? prev.filter((n) => n !== eventName) : [...prev, eventName]
-    )
+    setSelectedEventNames((prev) => {
+      if (prev.includes(eventName)) {
+        const next = prev.filter((n) => n !== eventName)
+        setEventCustomNames((prevNames) => {
+          const copy = { ...prevNames }
+          delete copy[eventName]
+          return copy
+        })
+        setEventOffsets((prevOffsets) => {
+          const copy = { ...prevOffsets }
+          delete copy[eventName]
+          return copy
+        })
+        return next
+      }
+      return [...prev, eventName]
+    })
   }, [])
 
   const selectAllEvents = useCallback(() => setSelectedEventNames(availableEventNames), [availableEventNames])
@@ -391,6 +412,91 @@ export default function EventsPageClient() {
   }, [locationDataSource, allCustomLocations])
   const deselectAllLocations = useCallback(() => setSelectedLocationIds([]), [])
 
+  const openEditEventModal = useCallback(
+    (eventName) => {
+      const currentName = eventCustomNames[eventName] || ''
+      const cfg = eventOffsets[eventName] || {}
+
+      const isBookingDynamicEvent =
+        journey?.type === 'booking' &&
+        (eventName === 'Booking Reminder' ||
+          eventName === 'Booking Confirmed' ||
+          eventName === 'Booking Checked in' ||
+          eventName === 'Booking Attended' ||
+          eventName === 'Booking Not Attended')
+      const isSubscriptionDynamicEvent =
+        journey?.type === 'subscription' &&
+        (eventName === 'Subscription Renewed' ||
+          eventName === 'Subscription Expiry Reminder' ||
+          eventName === 'Subscription Expired')
+
+      const defaultPreset = (() => {
+        if (eventName === 'Added to Cart') return { mode: 'fixed', unit: 'minutes', value: '2' }
+        if (eventName === 'Started Checkout') return { mode: 'fixed', unit: 'minutes', value: '2' }
+        if (eventName === 'Placed Order') return { mode: 'fixed', unit: 'minutes', value: '5' }
+        if (eventName === 'Booking Created') return { mode: 'fixed', unit: 'minutes', value: '5' }
+        if (eventName === 'Subscription Started') return { mode: 'fixed', unit: 'minutes', value: '5' }
+        if (eventName === 'Ordered Product') return { mode: 'auto', unit: 'minutes', value: '' }
+        if (eventName === 'Fulfilled Order') return { mode: 'fixed', unit: 'days', value: '1' }
+        if (eventName === 'Cancelled Order') return { mode: 'fixed', unit: 'days', value: '1' }
+        if (eventName === 'Refunded Order') return { mode: 'fixed', unit: 'days', value: '1' }
+        return { mode: 'fixed', unit: 'minutes', value: '' }
+      })()
+
+      const hasExplicit =
+        (cfg.mode === 'range' && (String(cfg.min ?? '').trim() !== '' || String(cfg.max ?? '').trim() !== '')) ||
+        (cfg.mode !== 'range' && String(cfg.value ?? '').trim() !== '')
+
+      const mode = cfg.mode === 'range' ? 'range' : (hasExplicit ? 'fixed' : defaultPreset.mode)
+      const unit = cfg.unit === 'days' ? 'days' : (hasExplicit ? (cfg.unit || 'minutes') : defaultPreset.unit)
+
+      setEditingEventName(eventName)
+      setEditingDraftName(currentName)
+      setEditingDraftMode(mode)
+      setEditingDraftUnit(unit)
+      if (isBookingDynamicEvent || isSubscriptionDynamicEvent) {
+        setEditingDraftValue('')
+        setEditingDraftMin('')
+        setEditingDraftMax('')
+      } else if (cfg.mode === 'range') {
+        setEditingDraftMode('range')
+        setEditingDraftValue('')
+        setEditingDraftMin(cfg.min ?? '')
+        setEditingDraftMax(cfg.max ?? '')
+      } else if (mode === 'auto') {
+        setEditingDraftMode('auto')
+        setEditingDraftValue('')
+        setEditingDraftMin('')
+        setEditingDraftMax('')
+      } else {
+        setEditingDraftValue(hasExplicit ? (cfg.value ?? '') : defaultPreset.value)
+        setEditingDraftMin('')
+        setEditingDraftMax('')
+      }
+    },
+    [eventCustomNames, eventOffsets, journey?.type]
+  )
+
+  const getDefaultTimingLabel = useCallback(
+    (eventName, opts = {}) => {
+      const { isFirstSelected = false, isBookingDynamicEvent = false, isSubscriptionDynamicEvent = false } = opts
+      if (isFirstSelected) return 'First event'
+      if (isBookingDynamicEvent) return 'Dynamic (based on booking session)'
+      if (isSubscriptionDynamicEvent) return 'Dynamic (based on subscription interval)'
+      if (eventName === 'Added to Cart') return '2 minutes'
+      if (eventName === 'Started Checkout') return '2 minutes'
+      if (eventName === 'Placed Order') return '5 minutes'
+      if (eventName === 'Booking Created') return '5 minutes'
+      if (eventName === 'Subscription Started') return '5 minutes'
+      if (eventName === 'Ordered Product') return 'None (auto)'
+      if (eventName === 'Fulfilled Order') return '1 day'
+      if (eventName === 'Cancelled Order') return '1 day'
+      if (eventName === 'Refunded Order') return '1 day'
+      return ''
+    },
+    []
+  )
+
   const loadProfiles = useCallback(async () => {
     setProfilesLoadError(null)
     try {
@@ -432,6 +538,48 @@ export default function EventsPageClient() {
         : needsProducts
           ? { productsPerOrderMin: productsPerOrderMinNum, productsPerOrderMax: productsPerOrderMaxNum }
           : undefined
+
+    const customEventNames =
+      selectedEventNames.length > 0
+        ? selectedEventNames.reduce((acc, name) => {
+            const v = (eventCustomNames[name] || '').trim()
+            if (v) acc[name] = v
+            return acc
+          }, {})
+        : undefined
+
+    const firstSelectedIndex = availableEventNames.findIndex((n) => selectedEventNames.includes(n))
+    const customEventTimings =
+      selectedEventNames.length > 0
+        ? selectedEventNames.map((name) => {
+            const idxInOrdered = availableEventNames.findIndex((n) => n === name)
+            const isFirstSelected = idxInOrdered !== -1 && idxInOrdered === firstSelectedIndex
+            const cfg = eventOffsets[name] || {}
+
+            // Booking/subscription dynamic events should not override timings
+            const isBookingDynamicEvent =
+              journey?.type === 'booking' &&
+              (name === 'Booking Reminder' ||
+                name === 'Booking Confirmed' ||
+                name === 'Booking Checked in' ||
+                name === 'Booking Attended' ||
+                name === 'Booking Not Attended')
+            const isSubscriptionDynamicEvent =
+              journey?.type === 'subscription' &&
+              (name === 'Subscription Renewed' ||
+                name === 'Subscription Expiry Reminder' ||
+                name === 'Subscription Expired')
+
+            if (isFirstSelected || isBookingDynamicEvent || isSubscriptionDynamicEvent) {
+              return { eventName: name, offsetMode: 'fixed', offsetValue: null, offsetUnit: cfg.unit || 'minutes' }
+            }
+
+            if (cfg.mode === 'range') {
+              return { eventName: name, offsetMode: 'range', offsetMin: cfg.min ?? null, offsetMax: cfg.max ?? null, offsetUnit: cfg.unit || 'minutes' }
+            }
+            return { eventName: name, offsetMode: 'fixed', offsetValue: cfg.value ?? null, offsetUnit: cfg.unit || 'minutes' }
+          })
+        : undefined
     const result = generateEvents({
       journeyId: selectedJourneyId,
       selectedEventNames,
@@ -441,6 +589,8 @@ export default function EventsPageClient() {
         profilesCount: profileMode === 'auto' ? profilesCountNum : undefined,
         dateRange,
         timingOverrides,
+        customEventNames,
+        customEventTimings,
         ...profilesOption,
         ...productsPerOrder,
       },
@@ -754,77 +904,311 @@ export default function EventsPageClient() {
             {/* Configuration: only show when not on confirmation */}
             {generateStep !== 'confirm' && (
             <>
-            {/* Step 1: Journey type (online / in-store / booking / subscription), variant, then events */}
+            {/* Step 1: Journey type, event settings, and events */}
             <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
               <div className="bg-gradient-to-r from-indigo-50 to-white px-6 py-4 border-b border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900">
                   <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white text-sm font-bold mr-3">1</span>
                   Journey type & events
                 </h2>
-                <p className="text-sm text-gray-500 mt-1 ml-11">Choose what type of journey (online, in-store, booking, or subscription), then which events to generate. In the next step you&apos;ll pick which items or industry template to use.</p>
+                <p className="text-sm text-gray-500 mt-1 ml-11">
+                  Choose what type of journey (online, in-store, booking, or subscription), then which events to generate.
+                  In the next step you&apos;ll pick which items or industry template to use. K:Dummy auto appends
+                  <code className="bg-gray-100 px-1 rounded text-xs ml-1">(KD)</code> to your event names, so they appear as
+                  <span className="bg-gray-100 px-1 rounded text-xs ml-1">event name (KD)</span> upon event generation.
+                </p>
               </div>
               <div className="p-6">
-                <div className="flex flex-col md:flex-row gap-0 min-h-0">
-                  <aside className="md:w-1/4 md:min-w-0 border-b md:border-b-0 md:border-r border-gray-200 bg-gray-50/50 flex-shrink-0 p-2">
-                    <h3 className="text-sm font-medium text-gray-700 mb-2 px-1">Journey type</h3>
-                    <nav className="flex md:flex-col gap-0 overflow-x-auto md:overflow-x-visible" aria-label="Journey type">
-                      {JOURNEY_TYPES.map((t) => (
-                        <button
-                          key={t.value}
-                          type="button"
-                          role="option"
-                          aria-selected={journeyType === t.value}
-                          onClick={() => setJourneyType(t.value)}
-                          className={`w-full text-left py-2.5 px-3 rounded-md text-sm font-medium whitespace-nowrap ${
-                            journeyType === t.value ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                          }`}
-                        >
-                          {t.label}
-                        </button>
-                      ))}
-                    </nav>
-                  </aside>
-                  <aside className="md:w-1/4 md:min-w-0 border-b md:border-b-0 md:border-r border-gray-200 bg-gray-50/50 flex-shrink-0 p-2">
-                    <h3 className="text-sm font-medium text-gray-700 mb-2 px-1">Variant</h3>
-                    <nav className="flex md:flex-col gap-0 overflow-x-auto md:overflow-x-visible" aria-label="Journey variant">
-                      {journeysOfType.map((j) => (
-                        <button
-                          key={j.id}
-                          type="button"
-                          role="option"
-                          aria-selected={journeyVariant === j.variant}
-                          onClick={() => setJourneyVariant(j.variant)}
-                          className={`w-full text-left py-2.5 px-3 rounded-md text-sm font-medium whitespace-nowrap ${
-                            journeyVariant === j.variant ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                          }`}
-                        >
-                          {j.name.includes(' — ') ? j.name.split(' — ')[1] : j.variant}
-                        </button>
-                      ))}
-                    </nav>
-                  </aside>
-                  <div className="md:w-2/4 min-w-0 p-4 overflow-auto">
+                <div className="grid grid-cols-1 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)_minmax(0,2fr)] gap-4 min-h-0">
+                  {/* Column 1: Journey settings */}
+                  <div className="space-y-4 md:min-w-0">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-1">Journey settings</h3>
+                    <section className="border border-gray-200 bg-gray-50/50 rounded-lg p-2">
+                      <h4 className="text-xs font-medium text-gray-700 mb-2 px-1">Journey type</h4>
+                      <nav className="flex md:flex-col gap-0 overflow-x-auto md:overflow-x-visible" aria-label="Journey type">
+                        {JOURNEY_TYPES.map((t) => (
+                          <button
+                            key={t.value}
+                            type="button"
+                            role="option"
+                            aria-selected={journeyType === t.value}
+                            onClick={() => setJourneyType(t.value)}
+                            className={`w-full text-left py-2 px-3 rounded-md text-sm whitespace-nowrap ${
+                              journeyType === t.value ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                            }`}
+                          >
+                            {t.label}
+                          </button>
+                        ))}
+                      </nav>
+                    </section>
+                    <section className="border border-gray-200 bg-gray-50/50 rounded-lg p-2">
+                      <h4 className="text-xs font-medium text-gray-700 mb-2 px-1">Journey variant</h4>
+                      <nav className="flex md:flex-col gap-0 overflow-x-auto md:overflow-x-visible" aria-label="Journey variant">
+                        {journeysOfType.map((j) => (
+                          <button
+                            key={j.id}
+                            type="button"
+                            role="option"
+                            aria-selected={journeyVariant === j.variant}
+                            onClick={() => setJourneyVariant(j.variant)}
+                            className={`w-full text-left py-2 px-3 rounded-md text-sm whitespace-nowrap ${
+                              journeyVariant === j.variant ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                            }`}
+                          >
+                            {j.name.includes(' — ') ? j.name.split(' — ')[1] : j.variant}
+                          </button>
+                        ))}
+                      </nav>
+                    </section>
+                  </div>
+
+                  {/* Column 2: Event settings */}
+                  <div className="md:border-l border-t md:border-t-0 border-gray-200 pt-4 md:pt-0 md:pl-4 space-y-4">
+                    <h3 className="text-sm font-semibold text-gray-900">Event settings</h3>
+
+                    {needsProducts && journey && (
+                      <div className="rounded-lg border border-gray-200 bg-gray-50/30 p-4">
+                        <label className="block text-xs font-medium text-gray-700 mb-2 uppercase tracking-wide">Products per order</label>
+                        <p className="text-xs text-gray-500 mb-3">
+                          Min–max line items per order. One Viewed Product and one Added to Cart event per product.
+                        </p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <input
+                            type="number"
+                            min={1}
+                            max={10}
+                            value={productsPerOrderMin}
+                            onChange={(e) => setProductsPerOrderMin(e.target.value)}
+                            onBlur={() => {
+                              const min = Math.max(1, Math.min(10, parseInt(productsPerOrderMin, 10) || 1))
+                              const max = Math.max(min, Math.min(10, parseInt(productsPerOrderMax, 10) || min))
+                              setProductsPerOrderMin(String(min))
+                              setProductsPerOrderMax(String(max))
+                            }}
+                            className="w-16 rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-center"
+                            aria-label="Products per order from"
+                          />
+                          <span className="text-xs text-gray-500">to</span>
+                          <input
+                            type="number"
+                            min={1}
+                            max={10}
+                            value={productsPerOrderMax}
+                            onChange={(e) => setProductsPerOrderMax(e.target.value)}
+                            onBlur={() => {
+                              const min = Math.max(1, Math.min(10, parseInt(productsPerOrderMin, 10) || 1))
+                              const max = Math.max(min, Math.min(10, parseInt(productsPerOrderMax, 10) || min))
+                              setProductsPerOrderMin(String(min))
+                              setProductsPerOrderMax(String(max))
+                            }}
+                            className="w-16 rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-center"
+                            aria-label="Products per order to"
+                          />
+                          <span className="text-xs text-gray-500">items</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {journey?.timingProfile === 'booking_spaced' && (
+                      <div className="rounded-lg border border-gray-200 bg-gray-50/30 p-4">
+                        <label className="block text-xs font-medium text-gray-700 mb-2 uppercase tracking-wide">Session offset</label>
+                        <p className="text-xs text-gray-500 mb-3">When the session happens after booking creation.</p>
+
+                        <div className="flex gap-2 mb-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setBookingSessionMode('fixed')
+                              setBookingSessionDaysMax(bookingSessionDaysMin)
+                            }}
+                            className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium ${
+                              bookingSessionMode === 'fixed'
+                                ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                                : 'border-gray-300 bg-white text-gray-700'
+                            }`}
+                          >
+                            Fixed
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setBookingSessionMode('range')}
+                            className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium ${
+                              bookingSessionMode === 'range'
+                                ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                                : 'border-gray-300 bg-white text-gray-700'
+                            }`}
+                          >
+                            Range
+                          </button>
+                        </div>
+
+                        {bookingSessionMode === 'fixed' ? (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <input
+                              id="bookingSessionDaysFixed"
+                              type="number"
+                              min={0}
+                              max={90}
+                              value={bookingSessionDaysMin}
+                              onChange={(e) => {
+                                setBookingSessionDaysMin(e.target.value)
+                                setBookingSessionDaysMax(e.target.value)
+                              }}
+                              onBlur={() => {
+                                const n = Math.max(0, Math.min(90, parseInt(bookingSessionDaysMin, 10) || 0))
+                                setBookingSessionDaysMin(String(n))
+                                setBookingSessionDaysMax(String(n))
+                              }}
+                              className="w-20 rounded-lg border border-gray-300 bg-white px-2 py-2.5 text-sm font-medium text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center"
+                            />
+                            <span className="text-xs text-gray-500">days</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-600">Min</span>
+                              <input
+                                id="bookingSessionDaysMin"
+                                type="number"
+                                min={0}
+                                max={90}
+                                value={bookingSessionDaysMin}
+                                onChange={(e) => setBookingSessionDaysMin(e.target.value)}
+                                onBlur={() => {
+                                  const n = Math.max(0, Math.min(90, parseInt(bookingSessionDaysMin, 10) || 0))
+                                  setBookingSessionDaysMin(String(n))
+                                }}
+                                className="w-20 rounded-lg border border-gray-300 bg-white px-2 py-2.5 text-sm font-medium text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center"
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-600">Max</span>
+                              <input
+                                id="bookingSessionDaysMax"
+                                type="number"
+                                min={0}
+                                max={90}
+                                value={bookingSessionDaysMax}
+                                onChange={(e) => setBookingSessionDaysMax(e.target.value)}
+                                onBlur={() => {
+                                  const n = Math.max(0, Math.min(90, parseInt(bookingSessionDaysMax, 10) || 0))
+                                  setBookingSessionDaysMax(String(n))
+                                }}
+                                className="w-20 rounded-lg border border-gray-300 bg-white px-2 py-2.5 text-sm font-medium text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center"
+                              />
+                            </div>
+                            <span className="text-xs text-gray-500">days</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="rounded-lg border border-gray-200 bg-gray-50/30 p-4">
+                      <label htmlFor="journeyCount" className="block text-xs font-medium text-gray-700 mb-2 uppercase tracking-wide">
+                        Journeys per profile
+                      </label>
+                      <p className="text-xs text-gray-500 mb-3">How many journey runs per profile (1–10)</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <input
+                          id="journeyCount"
+                          type="number"
+                          min={1}
+                          max={10}
+                          value={journeyCount}
+                          onChange={(e) => setJourneyCount(e.target.value)}
+                          onBlur={() => {
+                            const n = Math.max(1, Math.min(10, parseInt(journeyCount, 10) || 1))
+                            setJourneyCount(String(n))
+                          }}
+                          className="w-16 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-center"
+                        />
+                        <span className="text-xs text-gray-500">{journeyCountNum === 1 ? 'journey' : 'journeys'}</span>
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg border border-gray-200 bg-gray-50/30 p-4">
+                      <label htmlFor="dateRange" className="block text-xs font-medium text-gray-700 mb-2 uppercase tracking-wide">
+                        Timestamp range
+                      </label>
+                      <p className="text-xs text-gray-500 mb-3">When generated events will be dated</p>
+                      <select
+                        id="dateRange"
+                        value={dateRange}
+                        onChange={(e) => setDateRange(e.target.value)}
+                        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      >
+                        {DATE_RANGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Column 3: Events */}
+                  <div className="md:border-l border-t md:border-t-0 border-gray-200 pt-4 md:pt-0 md:pl-4 min-w-0 overflow-auto">
                     {journey && (
                       <>
-                        <h3 className="text-sm font-medium text-gray-700 mb-2">Events</h3>
-                        <p className="text-xs text-gray-500 mb-2">Check or uncheck events. Order is fixed for a sensible story.</p>
-                        <div className="flex gap-2 mb-2">
-                          <button type="button" onClick={selectAllEvents} className="text-xs font-medium text-indigo-600 hover:text-indigo-800">Select all</button>
-                          <span className="text-gray-300">|</span>
-                          <button type="button" onClick={deselectAllEvents} className="text-xs font-medium text-indigo-600 hover:text-indigo-800">Deselect all</button>
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-sm font-semibold text-gray-900">Events</h3>
+                          {availableEventNames.length > 0 && (
+                            <div className="flex gap-2 justify-end">
+                              <button type="button" onClick={selectAllEvents} className="text-xs font-medium text-indigo-600 hover:text-indigo-800">Select all</button>
+                              <span className="text-gray-300">|</span>
+                              <button type="button" onClick={deselectAllEvents} className="text-xs font-medium text-indigo-600 hover:text-indigo-800">Deselect all</button>
+                            </div>
+                          )}
                         </div>
                         <ul className="space-y-1.5 pr-1">
-                          {availableEventNames.map((name, idx) => (
-                            <li key={name}>
-                              <label className={`flex items-start gap-3 rounded-md border px-3 py-2 cursor-pointer transition-colors ${selectedEventNames.includes(name) ? 'border-indigo-200 bg-indigo-100' : 'border-gray-200 hover:bg-gray-100'}`}>
-                                <input type="checkbox" checked={selectedEventNames.includes(name)} onChange={() => toggleEvent(name)} className="mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
-                                <span className="text-sm">
-                                  <span className="font-medium text-gray-900">{name}</span>
-                                  {getEventDescription(name) && <span className="text-gray-500 block text-xs mt-0.5">{getEventDescription(name)}</span>}
-                                </span>
-                              </label>
-                            </li>
-                          ))}
+                          {availableEventNames.map((name, idx) => {
+                            const isSelected = selectedEventNames.includes(name)
+                            const firstSelectedIndex = availableEventNames.findIndex((n) => selectedEventNames.includes(n))
+                            const isFirstSelected = isSelected && firstSelectedIndex !== -1 && idx === firstSelectedIndex
+                            const cfg = eventOffsets[name] || {}
+                            const isBookingDynamicEvent =
+                              journey?.type === 'booking' &&
+                              (name === 'Booking Reminder' ||
+                                name === 'Booking Confirmed' ||
+                                name === 'Booking Checked in' ||
+                                name === 'Booking Attended' ||
+                                name === 'Booking Not Attended')
+                            const isSubscriptionDynamicEvent =
+                              journey?.type === 'subscription' &&
+                              (name === 'Subscription Renewed' ||
+                                name === 'Subscription Expiry Reminder' ||
+                                name === 'Subscription Expired')
+
+                            const timingLabel =
+                              isSelected
+                                ? (isFirstSelected
+                                    ? 'First event'
+                                    : cfg.mode === 'range'
+                                      ? `Between ${cfg.min ?? '…'}–${cfg.max ?? '…'} ${cfg.unit || 'minutes'}`
+                                      : cfg.value != null && String(cfg.value).trim() !== ''
+                                        ? `${cfg.value} ${cfg.unit || 'minutes'}`
+                                        : getDefaultTimingLabel(name, { isFirstSelected, isBookingDynamicEvent, isSubscriptionDynamicEvent }))
+                                : null
+
+                            return (
+                              <li key={name}>
+                                <div className={`rounded-md border px-4 py-3 transition-colors ${isSelected ? 'border-indigo-200 bg-indigo-100' : 'border-gray-200 hover:bg-gray-100'}`}>
+                                  <div className="flex items-start gap-3">
+                                    <label className="flex items-start gap-3 cursor-pointer flex-1">
+                                      <input type="checkbox" checked={isSelected} onChange={() => toggleEvent(name)} className="mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                                      <span className="text-sm flex-1">
+                                        <span className="font-medium text-gray-900">{eventCustomNames[name] || name}</span>
+                                        {getEventDescription(name) && <span className="text-gray-500 block text-xs mt-1.5">{getEventDescription(name)}</span>}
+                                      </span>
+                                    </label>
+                                    {isSelected && (
+                                      <div className="flex flex-col items-end gap-3">
+                                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openEditEventModal(name) }} className="inline-flex items-center rounded border border-gray-300 px-2 py-0.5 text-xs font-medium text-gray-700 bg-white hover:bg-gray-50">Edit</button>
+                                        <span className="text-xs font-semibold text-gray-800 whitespace-nowrap text-right">{timingLabel}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </li>
+                            )
+                          })}
                         </ul>
                       </>
                     )}
@@ -1176,155 +1560,13 @@ export default function EventsPageClient() {
               </div>
             </div>
 
-            {/* Step 3: Generation settings — 1/4 Journey + Timestamp, 3/4 Profile assignment */}
+            {/* Step 3 removed: settings are in Step 1 "Event settings" */}
+
+            {/* Step 3: Profile assignment — left cards, right selection (like catalog items) */}
             <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
               <div className="bg-gradient-to-r from-indigo-50 to-white px-6 py-4 border-b border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900">
                   <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white text-sm font-bold mr-3">3</span>
-                  Generation settings
-                </h2>
-                <p className="text-sm text-gray-500 mt-1 ml-11">Journeys per profile, timestamp range, and product options.</p>
-              </div>
-              <div className="p-6">
-                <div className={`grid gap-4 grid-cols-1 sm:grid-cols-3`}>
-                  {needsProducts && journey && (
-                    <div className="rounded-lg border border-gray-200 bg-gray-50/30 p-4">
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">Products per order</label>
-                      <p className="text-xs text-gray-500 mb-3">Min–max line items per order. One Viewed Product and one Added to Cart event per product.</p>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-600 w-7">Min</span>
-                          <input
-                            type="number"
-                            min={1}
-                            max={10}
-                            value={productsPerOrderMin}
-                            onChange={(e) => setProductsPerOrderMin(e.target.value)}
-                            onBlur={() => {
-                              const n = Math.max(1, Math.min(10, parseInt(productsPerOrderMin, 10) || 1))
-                              setProductsPerOrderMin(String(n))
-                            }}
-                            className="w-14 rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-center"
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-600 w-7">Max</span>
-                          <input
-                            type="number"
-                            min={1}
-                            max={10}
-                            value={productsPerOrderMax}
-                            onChange={(e) => setProductsPerOrderMax(e.target.value)}
-                            onBlur={() => {
-                              const n = Math.max(1, Math.min(10, parseInt(productsPerOrderMax, 10) || 1))
-                              setProductsPerOrderMax(String(n))
-                            }}
-                            className="w-14 rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-center"
-                          />
-                        </div>
-                        <span className="text-xs text-gray-500">items per order</span>
-                      </div>
-                    </div>
-                  )}
-                  {journey?.timingProfile === 'booking_spaced' && (
-                    <div className="rounded-lg border border-gray-200 bg-gray-50/30 p-4">
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">Booking session (days after create)</label>
-                      <p className="text-xs text-gray-500 mb-3">How many days after the booking is created the booking actually takes place.</p>
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-600">Min</span>
-                          <input
-                            id="bookingSessionDaysMin"
-                            type="number"
-                            min={0}
-                            max={90}
-                            value={bookingSessionDaysMin}
-                            onChange={(e) => setBookingSessionDaysMin(e.target.value)}
-                            onBlur={() => {
-                              const n = Math.max(0, Math.min(90, parseInt(bookingSessionDaysMin, 10) || 0))
-                              setBookingSessionDaysMin(String(n))
-                            }}
-                            className="w-14 rounded-lg border border-gray-300 bg-white px-2 py-2.5 text-sm font-medium text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center"
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-600">Max</span>
-                          <input
-                            id="bookingSessionDaysMax"
-                            type="number"
-                            min={0}
-                            max={90}
-                            value={bookingSessionDaysMax}
-                            onChange={(e) => setBookingSessionDaysMax(e.target.value)}
-                            onBlur={() => {
-                              const n = Math.max(0, Math.min(90, parseInt(bookingSessionDaysMax, 10) || 0))
-                              setBookingSessionDaysMax(String(n))
-                            }}
-                            className="w-14 rounded-lg border border-gray-300 bg-white px-2 py-2.5 text-sm font-medium text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center"
-                          />
-                        </div>
-                        <span className="text-xs text-gray-500">days</span>
-                      </div>
-                    </div>
-                  )}
-                  <div className="rounded-lg border border-gray-200 bg-gray-50/30 p-4">
-                    <label htmlFor="journeyCount" className="block text-sm font-semibold text-gray-900 mb-2">Journeys per profile</label>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setJourneyCount((c) => String(Math.max(1, Math.min(10, (parseInt(c, 10) || 1) - 1))))}
-                        {...journeyDecHold}
-                        className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:ring-2 focus:ring-indigo-500 select-none"
-                        aria-label="Decrease journeys per profile"
-                      >
-                        −
-                      </button>
-                      <input
-                        id="journeyCount"
-                        type="number"
-                        min={1}
-                        max={10}
-                        value={journeyCount}
-                        onChange={(e) => setJourneyCount(e.target.value)}
-                        onBlur={() => {
-                          const n = Math.max(1, Math.min(10, parseInt(journeyCount, 10) || 1))
-                          setJourneyCount(String(n))
-                        }}
-                        className="w-16 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setJourneyCount((c) => String(Math.min(10, (parseInt(c, 10) || 1) + 1)))}
-                        {...journeyIncHold}
-                        className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:ring-2 focus:ring-indigo-500 select-none"
-                        aria-label="Increase journeys per profile"
-                      >
-                        +
-                      </button>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2">How many journey runs per profile (1–10)</p>
-                  </div>
-                  <div className="rounded-lg border border-gray-200 bg-gray-50/30 p-4">
-                    <label htmlFor="dateRange" className="block text-sm font-semibold text-gray-900 mb-2">Timestamp range</label>
-                    <select
-                      id="dateRange"
-                      value={dateRange}
-                      onChange={(e) => setDateRange(e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    >
-                      {DATE_RANGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
-                    <p className="text-xs text-gray-500 mt-2">When generated events will be dated</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Step 4: Profile assignment — left cards, right selection (like catalog items) */}
-            <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-              <div className="bg-gradient-to-r from-indigo-50 to-white px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white text-sm font-bold mr-3">4</span>
                   Profile assignment
                 </h2>
                 <p className="text-sm text-gray-500 mt-1 ml-11">Who should the generated events be attributed to?</p>
@@ -1346,39 +1588,23 @@ export default function EventsPageClient() {
                       >
                         <div className="w-full text-left flex-1 min-h-0 flex flex-col items-start">
                           <span className="block text-sm font-semibold text-gray-900">Create new profiles</span>
+                          <span className="block text-xs text-gray-500 mt-1">Generate events and create new profiles (max 100).</span>
                         </div>
                         {profileMode === 'auto' && (
                           <div className="mt-3 flex-shrink-0 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                            <button
-                              type="button"
-                              onClick={() => setProfilesCount((c) => String(Math.max(1, Math.min(50, (parseInt(c, 10) || 5) - 1))))}
-                              {...profilesDecHold}
-                              className="rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 select-none"
-                              aria-label="Decrease"
-                            >
-                              −
-                            </button>
                             <input
                               type="number"
                               min={1}
-                              max={50}
+                              max={100}
                               value={profilesCount}
                               onChange={(e) => setProfilesCount(e.target.value)}
                               onBlur={() => {
-                                const n = Math.max(1, Math.min(50, parseInt(profilesCount, 10) || 5))
+                                const n = Math.max(1, Math.min(100, parseInt(profilesCount, 10) || 5))
                                 setProfilesCount(String(n))
                               }}
-                              className="w-14 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-center focus:ring-2 focus:ring-indigo-500"
+                              className="w-16 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-center focus:ring-2 focus:ring-indigo-500"
+                              aria-label="Number of profiles to create"
                             />
-                            <button
-                              type="button"
-                              onClick={() => setProfilesCount((c) => String(Math.min(50, (parseInt(c, 10) || 5) + 1)))}
-                              {...profilesIncHold}
-                              className="rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 select-none"
-                              aria-label="Increase"
-                            >
-                              +
-                            </button>
                             <span className="text-xs text-gray-500">profiles</span>
                           </div>
                         )}
@@ -1658,6 +1884,207 @@ export default function EventsPageClient() {
           )}
         </div>
       </main>
+
+      {editingEventName && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-semibold text-gray-900">Edit event</h2>
+                <p className="text-sm text-gray-500 mt-0.5 truncate">{editingEventName}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingEventName(null)}
+                className="text-gray-400 hover:text-gray-600"
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+            <div className="px-4 py-3 space-y-4 text-sm">
+              <div className="space-y-1">
+                <label className="block font-medium text-gray-700">Custom name</label>
+                <input
+                  type="text"
+                  value={editingDraftName}
+                  onChange={(e) => setEditingDraftName(e.target.value)}
+                  placeholder={editingEventName}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                />
+                <p className="text-xs text-gray-500">
+                  K:Dummy auto appends <span className="font-mono">(KD)</span> to your event names upon generation.
+                </p>
+              </div>
+
+              {(() => {
+                const isBookingDynamicEvent =
+                  journey?.type === 'booking' &&
+                  (editingEventName === 'Booking Reminder' ||
+                    editingEventName === 'Booking Confirmed' ||
+                    editingEventName === 'Booking Checked in' ||
+                    editingEventName === 'Booking Attended' ||
+                    editingEventName === 'Booking Not Attended')
+                const isSubscriptionDynamicEvent =
+                  journey?.type === 'subscription' &&
+                  (editingEventName === 'Subscription Renewed' ||
+                    editingEventName === 'Subscription Expiry Reminder' ||
+                    editingEventName === 'Subscription Expired')
+                if (isBookingDynamicEvent || isSubscriptionDynamicEvent) {
+                  return (
+                    <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
+                      <p className="text-sm font-medium text-gray-700">Time between events</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Dynamic (based on {isBookingDynamicEvent ? 'booking session' : 'subscription interval'}).
+                      </p>
+                    </div>
+                  )
+                }
+                return (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-gray-700">Time between events</p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setEditingDraftMode('auto')}
+                        className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium ${
+                          editingDraftMode === 'auto'
+                            ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                            : 'border-gray-300 bg-white text-gray-700'
+                        }`}
+                      >
+                        None (auto)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingDraftMode('fixed')}
+                        className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium ${
+                          editingDraftMode === 'fixed'
+                            ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                            : 'border-gray-300 bg-white text-gray-700'
+                        }`}
+                      >
+                        Fixed
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingDraftMode('range')}
+                        className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium ${
+                          editingDraftMode === 'range'
+                            ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                            : 'border-gray-300 bg-white text-gray-700'
+                        }`}
+                      >
+                        Range
+                      </button>
+                    </div>
+
+                    {editingDraftMode === 'fixed' ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          placeholder="5"
+                          value={editingDraftValue}
+                          onChange={(e) => setEditingDraftValue(e.target.value)}
+                          className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                        <select
+                          value={editingDraftUnit}
+                          onChange={(e) => setEditingDraftUnit(e.target.value)}
+                          className="w-28 rounded-md border border-gray-300 px-3 py-2 text-sm bg-white focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                          <option value="minutes">Minutes</option>
+                          <option value="days">Days</option>
+                        </select>
+                      </div>
+                    ) : editingDraftMode === 'range' ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          placeholder="3"
+                          value={editingDraftMin}
+                          onChange={(e) => setEditingDraftMin(e.target.value)}
+                          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          placeholder="10"
+                          value={editingDraftMax}
+                          onChange={(e) => setEditingDraftMax(e.target.value)}
+                          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                        <select
+                          value={editingDraftUnit}
+                          onChange={(e) => setEditingDraftUnit(e.target.value)}
+                          className="col-span-2 rounded-md border border-gray-300 px-3 py-2 text-sm bg-white focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                          <option value="minutes">Minutes</option>
+                          <option value="days">Days</option>
+                        </select>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-500">No delay — follows immediately after the previous event.</p>
+                    )}
+                  </div>
+                )
+              })()}
+            </div>
+            <div className="px-4 py-3 border-t border-gray-200 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setEditingEventName(null)}
+                className="px-4 py-2 rounded-md border border-gray-300 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!editingEventName) return
+                  setEventCustomNames((prev) => {
+                    const next = { ...prev }
+                    if (editingDraftName.trim()) next[editingEventName] = editingDraftName.trim()
+                    else delete next[editingEventName]
+                    return next
+                  })
+                  setEventOffsets((prev) => {
+                    const next = { ...prev }
+                    if (editingDraftMode === 'auto') {
+                      delete next[editingEventName]
+                    } else if (editingDraftMode === 'range') {
+                      const min = String(editingDraftMin ?? '').trim()
+                      const max = String(editingDraftMax ?? '').trim()
+                      if (!min && !max) {
+                        delete next[editingEventName]
+                      } else {
+                        next[editingEventName] = { mode: 'range', min, max, unit: editingDraftUnit }
+                      }
+                    } else {
+                      const value = String(editingDraftValue ?? '').trim()
+                      if (!value) {
+                        delete next[editingEventName]
+                      } else {
+                        next[editingEventName] = { mode: 'fixed', value, unit: editingDraftUnit }
+                      }
+                    }
+                    return next
+                  })
+                  setEditingEventName(null)
+                }}
+                className="px-4 py-2 rounded-md border border-transparent text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

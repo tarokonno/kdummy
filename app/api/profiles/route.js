@@ -142,7 +142,7 @@ export async function POST(request) {
           first_name: attributes.first_name ?? null,
           last_name: attributes.last_name ?? null,
           locale: attributes.locale ?? null,
-          ...(location && { location }),
+          ...(payloadAttrs.location && { location: payloadAttrs.location }),
           properties,
         },
         relationships: {},

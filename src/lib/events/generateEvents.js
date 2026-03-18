@@ -234,6 +234,7 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
   const dateRangeKey = options.dateRange || 'week'
   const now = Date.now()
   const DAY_MS = 24 * 60 * 60 * 1000
+  const MIN_MS = 60 * 1000
   const rangeMsByKey = {
     day: 1 * DAY_MS,
     week: 7 * DAY_MS,
@@ -245,6 +246,60 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
   }
   const rangeMs = rangeMsByKey[dateRangeKey] ?? rangeMsByKey.week
   const startMs = now - rangeMs
+
+  const customEventNames = options.customEventNames && typeof options.customEventNames === 'object' ? options.customEventNames : null
+  const customEventTimingsArray = Array.isArray(options.customEventTimings) ? options.customEventTimings : null
+  const customEventTimings = customEventTimingsArray && customEventTimingsArray.length > 0
+    ? customEventTimingsArray.reduce((acc, cfg) => {
+      if (!cfg || typeof cfg.eventName !== 'string') return acc
+      const key = cfg.eventName
+      const mode = (cfg.mode === 'range' || cfg.offsetMode === 'range') ? 'range' : 'fixed'
+      const unitRaw = cfg.unit ?? cfg.offsetUnit
+      const unit = unitRaw === 'days' ? 'days' : 'minutes'
+      if (mode === 'range') {
+        const min = Number(cfg.min ?? cfg.offsetMin)
+        const max = Number(cfg.max ?? cfg.offsetMax)
+        if (Number.isFinite(min) && Number.isFinite(max)) acc[key] = { mode, unit, min, max }
+        return acc
+      }
+      const value = Number(cfg.value ?? cfg.offsetValue)
+      if (Number.isFinite(value)) acc[key] = { mode, unit, value }
+      return acc
+    }, {})
+    : null
+
+  const getDisplayEventName = (baseName) => {
+    const raw = customEventNames?.[baseName]
+    if (typeof raw !== 'string') return baseName
+    const trimmed = raw.trim()
+    return trimmed ? trimmed : baseName
+  }
+
+  const toOffsetMs = (cfg) => {
+    if (!cfg) return null
+    if (cfg.mode === 'range') {
+      const lo = Number.isFinite(cfg.min) ? cfg.min : 0
+      const hi = Number.isFinite(cfg.max) ? cfg.max : lo
+      const picked = hi > lo ? lo + Math.random() * (hi - lo) : lo
+      return (cfg.unit === 'days' ? DAY_MS : MIN_MS) * picked
+    }
+    const v = Number.isFinite(cfg.value) ? cfg.value : 0
+    return (cfg.unit === 'days' ? DAY_MS : MIN_MS) * v
+  }
+
+  const ensureAfter = (ms, afterMs) => (ms <= afterMs ? afterMs + 1000 : ms)
+
+  const defaultDeltaMsForEvent = (eventName) => {
+    if (eventName === 'Added to Cart') return 2 * MIN_MS
+    if (eventName === 'Started Checkout') return 2 * MIN_MS
+    if (eventName === 'Placed Order') return 5 * MIN_MS
+    if (eventName === 'Booking Created') return 5 * MIN_MS
+    if (eventName === 'Subscription Started') return 5 * MIN_MS
+    if (eventName === 'Fulfilled Order') return 1 * DAY_MS
+    if (eventName === 'Cancelled Order') return 1 * DAY_MS
+    if (eventName === 'Refunded Order') return 1 * DAY_MS
+    return 0
+  }
 
   const selectedSet = new Set(selectedEventNames || [])
   const emitSequence = buildEmitSequence(journey, selectedSet)
@@ -293,7 +348,6 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
   const countOrderLineItemSets = Math.max(countPlacedOrdersInSequence, hasLeadEvents ? 1 : 0)
   const numLeadEventsInSequence = emitSequence.filter((x) => BOOKING_LEAD_EVENT_NAMES.includes(x.eventName)).length
 
-  const MIN_MS = 60 * 1000
   const stepCount = emitSequence.filter((x) => !x.isLineItem).length
   const stepMinutesMax = timingProfile.stepMinutesMax ?? timingProfile.stepMinutesMin ?? 10
   const reserveEndMs = timingProfileId === 'ecommerce_linear'
@@ -314,7 +368,8 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
     const profileNameFields = profileFirstNames && profileLastNames
       ? { profileFirstName: profileFirstNames[profileIndex], profileLastName: profileLastNames[profileIndex] }
       : {}
-    const runStartMs = startMs + (run / Math.max(1, totalRuns)) * usableRangeMs
+    // Pick a random timestamp within the selected range for each run.
+    const runStartMs = startMs + Math.random() * usableRangeMs
     const runLocation =
       locationsList.length > 0 ? toEventLocation(pickRandom(locationsList, null)) : null
 
@@ -366,12 +421,26 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
     let subscriptionExpiryReminderIndex = 0
     let subscriptionLeadStep = 0
     let bookingLeadIndex = 0
+    let hasUsedCustomTiming = false
+    let customPreviousEventMs = runStartMs
 
     for (let i = 0; i < emitSequence.length; i++) {
       const item = emitSequence[i]
       let eventMs = runStartMs
-      if (timingProfileId === 'ecommerce_linear' && timingProfile.stepMinutesMin != null) {
-        eventMs = linearStepMs(runStartMs, sequenceIndex, timingProfile.stepMinutesMin, timingProfile.stepMinutesMax ?? timingProfile.stepMinutesMin)
+      const customTimingCfg = customEventTimings?.[item.eventName]
+      if (customTimingCfg) {
+        const offsetMs = toOffsetMs(customTimingCfg) ?? 0
+        if (!hasUsedCustomTiming) {
+          eventMs = runStartMs
+          hasUsedCustomTiming = true
+        } else {
+          eventMs = customPreviousEventMs + offsetMs
+        }
+        customPreviousEventMs = eventMs
+      } else if (timingProfileId === 'ecommerce_linear') {
+        // Use event-specific defaults (and custom overrides) rather than equal step spacing.
+        const deltaMs = defaultDeltaMsForEvent(item.eventName)
+        eventMs = sequenceIndex === 0 ? runStartMs : (previousEventMs + (deltaMs ?? 0))
       } else if (timingProfileId === 'booking_spaced' && timingProfile.daysAfterCreate) {
         if (BOOKING_LEAD_EVENT_NAMES.includes(item.eventName)) {
           const stepMin = timingProfile.bookingLeadStepMinutes ?? 5
@@ -416,19 +485,25 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
         const isYearly = /^yearly?$/i.test(String(raw).trim())
         if (!isYearly) continue
       }
-      previousEventMs = eventMs
+      // Enforce strictly increasing timestamps (Klaviyo dedupes identical timestamps).
+      eventMs = ensureAfter(eventMs, previousEventMs)
       const timestamp = new Date(eventMs).toISOString()
       if (!item.isLineItem) sequenceIndex++
 
       const leadLineItems = runLineItemsByOrderIndex[placedOrderCountInRun]
 
       if (item.isLineItem && lineItems.length > 0 && lastOrderId) {
-        for (const line of lineItems) {
+        let lastMs = eventMs
+        const displayName = getDisplayEventName('Ordered Product')
+        const fullName = KD(displayName)
+        lineItems.forEach((line, idx) => {
+          const lineMs = ensureAfter(eventMs + (idx + 1) * 1000, lastMs)
+          lastMs = lineMs
           events.push({
             id: makeId('evt_', ++eventIndex),
-            time: timestamp,
-            metric_name: KD('Ordered Product'),
-            eventName: 'Ordered Product',
+            time: new Date(lineMs).toISOString(),
+            metric_name: fullName,
+            eventName: fullName,
             profileId,
             profileEmail,
             ...profileNameFields,
@@ -437,7 +512,9 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
             value: (line.price || 0) * (line.quantity || 1),
             valueCurrency: line.currency || 'USD',
           })
-        }
+        })
+        previousEventMs = lastMs
+        customPreviousEventMs = Math.max(customPreviousEventMs, previousEventMs)
         continue
       }
 
@@ -458,8 +535,8 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
         const payload = {
           id: makeId('evt_', ++eventIndex),
           time: timestamp,
-          metric_name: KD('Placed Order'),
-          eventName: 'Placed Order',
+          metric_name: KD(getDisplayEventName('Placed Order')),
+          eventName: KD(getDisplayEventName('Placed Order')),
           profileId,
           profileEmail,
           ...profileNameFields,
@@ -486,16 +563,23 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
         if (source === 'instore' && runLocation) Object.assign(payload, runLocation)
         events.push(payload)
         orderIndex++
+        previousEventMs = eventMs
+        customPreviousEventMs = Math.max(customPreviousEventMs, previousEventMs)
         continue
       }
 
       if (item.eventName === 'Viewed Product' && leadLineItems && leadLineItems.length > 0) {
-        for (const line of leadLineItems) {
+        let lastMs = eventMs - 1000
+        const displayName = getDisplayEventName('Viewed Product')
+        const fullName = KD(displayName)
+        leadLineItems.forEach((line, idx) => {
+          const lineMs = ensureAfter(eventMs + idx * 1000, lastMs)
+          lastMs = lineMs
           events.push({
             id: makeId('evt_', ++eventIndex),
-            time: timestamp,
-            metric_name: KD('Viewed Product'),
-            eventName: 'Viewed Product',
+            time: new Date(lineMs).toISOString(),
+            metric_name: fullName,
+            eventName: fullName,
             profileId,
             profileEmail,
             ...profileNameFields,
@@ -503,17 +587,24 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
             value: (line.price || 0) * (line.quantity || 1),
             valueCurrency: line.currency || 'USD',
           })
-        }
+        })
+        previousEventMs = lastMs
+        customPreviousEventMs = Math.max(customPreviousEventMs, previousEventMs)
         continue
       }
 
       if (item.eventName === 'Added to Cart' && leadLineItems && leadLineItems.length > 0) {
-        for (const line of leadLineItems) {
+        let lastMs = eventMs - 1000
+        const displayName = getDisplayEventName('Added to Cart')
+        const fullName = KD(displayName)
+        leadLineItems.forEach((line, idx) => {
+          const lineMs = ensureAfter(eventMs + idx * 1000, lastMs)
+          lastMs = lineMs
           events.push({
             id: makeId('evt_', ++eventIndex),
-            time: timestamp,
-            metric_name: KD('Added to Cart'),
-            eventName: 'Added to Cart',
+            time: new Date(lineMs).toISOString(),
+            metric_name: fullName,
+            eventName: fullName,
             profileId,
             profileEmail,
             ...profileNameFields,
@@ -521,7 +612,9 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
             value: (line.price || 0) * (line.quantity || 1),
             valueCurrency: line.currency || 'USD',
           })
-        }
+        })
+        previousEventMs = lastMs
+        customPreviousEventMs = Math.max(customPreviousEventMs, previousEventMs)
         continue
       }
 
@@ -531,11 +624,13 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
         const cartValue = checkoutLineItems.reduce((sum, l) => sum + (l.price || 0) * (l.quantity || 1), 0)
         const checkoutLists = deriveOrderListsFromItems(checkoutItems)
         const includeBrandsCheckout = journey.type === 'ecommerce_online' || journey.type === 'ecommerce_instore'
+        const displayName = getDisplayEventName('Started Checkout')
+        const fullName = KD(displayName)
         events.push({
           id: makeId('evt_', ++eventIndex),
           time: timestamp,
-          metric_name: KD('Started Checkout'),
-          eventName: 'Started Checkout',
+          metric_name: fullName,
+          eventName: fullName,
           profileId,
           profileEmail,
           ...profileNameFields,
@@ -547,14 +642,16 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
           item_names: checkoutLists.item_names,
           categories: checkoutLists.categories,
         })
+        previousEventMs = eventMs
+        customPreviousEventMs = Math.max(customPreviousEventMs, previousEventMs)
         continue
       }
 
       const orderPayload = {
         id: makeId('evt_', ++eventIndex),
         time: timestamp,
-        metric_name: KD(item.eventName),
-        eventName: item.eventName,
+        metric_name: KD(getDisplayEventName(item.eventName)),
+        eventName: KD(getDisplayEventName(item.eventName)),
         profileId,
         profileEmail,
         ...profileNameFields,
@@ -640,6 +737,8 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
           }
         }
       }
+      previousEventMs = eventMs
+      customPreviousEventMs = Math.max(customPreviousEventMs, previousEventMs)
       events.push(orderPayload)
     }
   }
