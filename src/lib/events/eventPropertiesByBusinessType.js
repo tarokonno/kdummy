@@ -171,11 +171,9 @@ export const EVENT_PROPERTIES_BY_BUSINESS_TYPE = {
   },
   'hotel-rooms': {
     'Booking Created': {
-      mandatory: [
-        { key: 'check_in_date', description: 'Check-in date', example: '2025-02-15', source: 'catalog' },
-        { key: 'check_out_date', description: 'Check-out date', example: '2025-02-17', source: 'catalog' },
-      ],
       catalogDriven: [
+        { key: 'booking_from', description: 'Check-in (start of stay)', example: '2025-02-15T15:00:00.000Z', source: 'system' },
+        { key: 'booking_to', description: 'Check-out (end of stay)', example: '2025-02-17T11:00:00.000Z', source: 'system' },
         { key: 'room_type', description: 'Room type (from name/categories)', source: 'catalog', catalogField: 'name' },
         { key: 'duration_minutes', description: 'Stay length (minutes)', source: 'catalog', catalogField: 'durationMinutes' },
       ],

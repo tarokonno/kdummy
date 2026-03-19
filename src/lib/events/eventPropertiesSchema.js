@@ -28,15 +28,14 @@ export const EVENT_PROPERTY_SCHEMAS = {
   'Viewed Product': {
     mandatory: [
       ...MANDATORY,
-      { key: 'product_id', description: 'Product identifier', example: 'prod_123', source: 'catalog' },
-      { key: 'product_name', description: 'Product name', example: 'Classic Tee', source: 'catalog' },
-      { key: 'product_url', description: 'Product page URL', example: 'https://example.com/products/classic-tee', source: 'catalog' },
+      { key: 'id', description: 'Product identifier', example: 'prod_123', source: 'catalog' },
+      { key: 'name', description: 'Product name', example: 'Classic Tee', source: 'catalog' },
+      { key: 'url', description: 'Product page URL', example: 'https://example.com/products/classic-tee', source: 'catalog' },
     ],
     catalogDriven: [
       { key: 'categories', description: 'Product categories', source: 'catalog', catalogField: 'categories' },
       { key: 'brand', description: 'Brand', source: 'catalog', catalogField: 'brand' },
       { key: 'price', description: 'Price', source: 'catalog', catalogField: 'price' },
-      { key: 'currency', description: 'Currency', source: 'catalog', catalogField: 'currency' },
       { key: 'image_url', description: 'Image URL', source: 'catalog', catalogField: 'imageUrl' },
     ],
     catalogItemType: 'product',
@@ -44,11 +43,11 @@ export const EVENT_PROPERTY_SCHEMAS = {
   'Added to Cart': {
     mandatory: [
       ...MANDATORY,
-      { key: 'product_id', description: 'Product identifier', example: 'prod_123', source: 'catalog' },
-      { key: 'product_name', description: 'Product name', example: 'Classic Tee', source: 'catalog' },
+      { key: 'id', description: 'Product identifier', example: 'prod_123', source: 'catalog' },
+      { key: 'name', description: 'Product name', example: 'Classic Tee', source: 'catalog' },
+      { key: 'url', description: 'Product page URL', example: 'https://example.com/products/classic-tee', source: 'catalog' },
       { key: 'quantity', description: 'Quantity added', example: 1, source: 'system' },
       { key: 'price', description: 'Unit price', example: 29.99, source: 'catalog' },
-      { key: 'currency', description: 'Currency', example: 'USD', source: 'catalog' },
     ],
     catalogDriven: [
       { key: 'categories', description: 'Product categories', source: 'catalog', catalogField: 'categories' },
@@ -60,7 +59,6 @@ export const EVENT_PROPERTY_SCHEMAS = {
     mandatory: [
       ...MANDATORY,
       { key: 'value', description: 'Cart/order value', example: 79.98, source: 'system' },
-      { key: 'currency', description: 'Currency', example: 'USD', source: 'system' },
       { key: 'item_count', description: 'Number of items', example: 2, source: 'system' },
       { key: 'items', description: 'Cart/checkout line items (array with full product/variant data for Klaviyo)', example: [], source: 'catalog' },
       { key: 'brands', description: 'List of brand names from items', example: [], source: 'catalog' },
@@ -75,7 +73,7 @@ export const EVENT_PROPERTY_SCHEMAS = {
       ...MANDATORY,
       { key: 'order_id', description: 'Order identifier', example: 'ord_001', source: 'system' },
       { key: 'value', description: 'Order total value', example: 79.98, source: 'system' },
-      { key: 'value_currency', description: 'Currency', example: 'USD', source: 'system' },
+      { key: 'item_count', description: 'Number of items', example: 2, source: 'system' },
       { key: 'items', description: 'Order line items (array with full product/variant data for Klaviyo)', example: [], source: 'catalog' },
       { key: 'brands', description: 'List of brand names from items', example: [], source: 'catalog' },
       { key: 'item_names', description: 'List of product/item names from order', example: [], source: 'catalog' },
@@ -100,11 +98,11 @@ export const EVENT_PROPERTY_SCHEMAS = {
     mandatory: [
       ...MANDATORY,
       { key: 'order_id', description: 'Order identifier', example: 'ord_001', source: 'system' },
-      { key: 'product_id', description: 'Product identifier', example: 'prod_123', source: 'catalog' },
-      { key: 'product_name', description: 'Product name', example: 'Classic Tee', source: 'catalog' },
+      { key: 'id', description: 'Product/item identifier', example: 'prod_123', source: 'catalog' },
+      { key: 'name', description: 'Product/item name', example: 'Classic Tee', source: 'catalog' },
+      { key: 'url', description: 'Product/item URL', example: 'https://example.com/products/classic-tee', source: 'catalog' },
       { key: 'quantity', description: 'Quantity', example: 1, source: 'system' },
       { key: 'price', description: 'Unit price', example: 29.99, source: 'catalog' },
-      { key: 'currency', description: 'Currency', example: 'USD', source: 'catalog' },
     ],
     catalogDriven: [
       { key: 'categories', description: 'Product categories', source: 'catalog', catalogField: 'categories' },
@@ -116,6 +114,7 @@ export const EVENT_PROPERTY_SCHEMAS = {
     mandatory: [
       ...MANDATORY,
       { key: 'order_id', description: 'Order identifier', example: 'ord_001', source: 'system' },
+      { key: 'item_count', description: 'Number of items', example: 2, source: 'system' },
       { key: 'items', description: 'Order line items (array with full product/variant data for Klaviyo)', example: [], source: 'catalog' },
       { key: 'brands', description: 'List of brand names from items', example: [], source: 'catalog' },
       { key: 'item_names', description: 'List of product/item names from order', example: [], source: 'catalog' },
@@ -132,6 +131,7 @@ export const EVENT_PROPERTY_SCHEMAS = {
     mandatory: [
       ...MANDATORY,
       { key: 'order_id', description: 'Order identifier', example: 'ord_001', source: 'system' },
+      { key: 'item_count', description: 'Number of items', example: 2, source: 'system' },
       { key: 'items', description: 'Order line items (array with full product/variant data for Klaviyo)', example: [], source: 'catalog' },
       { key: 'brands', description: 'List of brand names from items', example: [], source: 'catalog' },
       { key: 'item_names', description: 'List of product/item names from order', example: [], source: 'catalog' },
@@ -149,7 +149,7 @@ export const EVENT_PROPERTY_SCHEMAS = {
       ...MANDATORY,
       { key: 'order_id', description: 'Order identifier', example: 'ord_001', source: 'system' },
       { key: 'value', description: 'Refund amount', example: 79.98, source: 'system' },
-      { key: 'value_currency', description: 'Currency', example: 'USD', source: 'system' },
+      { key: 'item_count', description: 'Number of items', example: 2, source: 'system' },
       { key: 'items', description: 'Order line items (array with full product/variant data for Klaviyo)', example: [], source: 'catalog' },
       { key: 'brands', description: 'List of brand names from items', example: [], source: 'catalog' },
       { key: 'item_names', description: 'List of product/item names from order', example: [], source: 'catalog' },
@@ -168,7 +168,6 @@ export const EVENT_PROPERTY_SCHEMAS = {
       { key: 'subscription_id', description: 'Subscription plan identifier', example: 'sub_123', source: 'catalog' },
       { key: 'subscription_name', description: 'Plan name', example: 'Pro Plan', source: 'catalog' },
       { key: 'price', description: 'Price', example: 49, source: 'catalog' },
-      { key: 'currency', description: 'Currency', example: 'USD', source: 'catalog' },
       { key: 'subscription_interval', description: 'Subscription interval (weekly, monthly, yearly)', example: 'monthly', source: 'catalog' },
       { key: 'payment_interval', description: 'Payment interval (weekly, monthly, yearly)', example: 'monthly', source: 'catalog' },
       { key: 'subscription_started_at', description: 'When the subscription started (ISO 8601)', example: '2025-01-28T12:00:00.000Z', source: 'system' },
@@ -222,7 +221,6 @@ export const EVENT_PROPERTY_SCHEMAS = {
       { key: 'subscription_id', description: 'Subscription identifier', example: 'sub_123', source: 'catalog' },
       { key: 'subscription_name', description: 'Plan name', example: 'Pro Plan', source: 'catalog' },
       { key: 'price', description: 'Price', example: 49, source: 'catalog' },
-      { key: 'currency', description: 'Currency', example: 'USD', source: 'catalog' },
       { key: 'subscription_started_at', description: 'When the subscription started (ISO 8601)', example: '2025-01-28T12:00:00.000Z', source: 'system' },
       { key: 'next_payment_date', description: 'Next payment/renewal date (YYYY-MM-DD)', example: '2025-02-28', source: 'system' },
     ],
@@ -235,14 +233,20 @@ export const EVENT_PROPERTY_SCHEMAS = {
     mandatory: [
       ...MANDATORY,
       { key: 'booking_id', description: 'Booking identifier', example: 'book_001', source: 'system' },
-      { key: 'service_id', description: 'Service identifier', example: 'svc_123', source: 'catalog' },
-      { key: 'service_name', description: 'Service name', example: 'Dinner Reservation', source: 'catalog' },
+      { key: 'item_id', description: 'Item (service) identifier', example: 'svc_123', source: 'catalog' },
+      { key: 'item_name', description: 'Item (service) name', example: 'Dinner Reservation', source: 'catalog' },
       { key: 'price', description: 'Price', example: 0, source: 'catalog' },
-      { key: 'currency', description: 'Currency', example: 'USD', source: 'catalog' },
     ],
     catalogDriven: [
       { key: 'categories', description: 'Service categories', source: 'catalog', catalogField: 'categories' },
       { key: 'duration_minutes', description: 'Duration in minutes', source: 'catalog', catalogField: 'durationMinutes' },
+      { key: 'booking_from', description: 'Start of booking (range only; omit if using booking_at)', example: '2025-01-30T19:00:00.000Z', source: 'system' },
+      { key: 'booking_to', description: 'End of booking (range only; omit if using booking_at)', example: '2025-02-02T11:00:00.000Z', source: 'system' },
+      { key: 'booking_at', description: 'Scheduled time (single date only; omit if using booking_from/booking_to)', example: '2025-01-30T19:00:00.000Z', source: 'system' },
+      { key: 'booking_created_at', description: 'When the booking was created', example: '2025-01-27T10:00:00.000Z', source: 'system' },
+      { key: 'location_id', description: 'Location ID', example: 'loc_1', source: 'catalog' },
+      { key: 'location_name', description: 'Location name', example: 'Main Store', source: 'catalog' },
+      { key: 'location_address', description: 'Location address', source: 'catalog' },
     ],
     catalogItemType: 'service',
   },
@@ -250,20 +254,36 @@ export const EVENT_PROPERTY_SCHEMAS = {
     mandatory: [
       ...MANDATORY,
       { key: 'booking_id', description: 'Booking identifier', example: 'book_001', source: 'system' },
-      { key: 'service_id', description: 'Service identifier', example: 'svc_123', source: 'catalog' },
+      { key: 'item_id', description: 'Item (service) identifier', example: 'svc_123', source: 'catalog' },
+      { key: 'item_name', description: 'Item (service) name', example: 'Dinner Reservation', source: 'catalog' },
     ],
-    catalogDriven: [],
+    catalogDriven: [
+      { key: 'booking_from', description: 'Start of booking (range only)', example: '2025-01-30T19:00:00.000Z', source: 'system' },
+      { key: 'booking_to', description: 'End of booking (range only)', example: '2025-02-02T11:00:00.000Z', source: 'system' },
+      { key: 'booking_at', description: 'Scheduled time (single date only)', example: '2025-01-30T19:00:00.000Z', source: 'system' },
+      { key: 'booking_created_at', description: 'When the booking was created', example: '2025-01-27T10:00:00.000Z', source: 'system' },
+      { key: 'location_id', description: 'Location ID', example: 'loc_1', source: 'catalog' },
+      { key: 'location_name', description: 'Location name', example: 'Main Store', source: 'catalog' },
+      { key: 'location_address', description: 'Location address', source: 'catalog' },
+    ],
     catalogItemType: 'service',
   },
   'Booking Reminder': {
     mandatory: [
       ...MANDATORY,
       { key: 'booking_id', description: 'Booking identifier', example: 'book_001', source: 'system' },
-      { key: 'service_name', description: 'Service name', example: 'Dinner Reservation', source: 'catalog' },
-      { key: 'booking_at', description: 'Scheduled time', example: '2025-01-30T19:00:00.000Z', source: 'system' },
+      { key: 'item_id', description: 'Item (service) identifier', example: 'svc_123', source: 'catalog' },
+      { key: 'item_name', description: 'Item (service) name', example: 'Dinner Reservation', source: 'catalog' },
       { key: 'booking_created_at', description: 'When the booking was created', example: '2025-01-27T10:00:00.000Z', source: 'system' },
     ],
-    catalogDriven: [],
+    catalogDriven: [
+      { key: 'booking_from', description: 'Start of booking (range only; omit if using booking_at)', example: '2025-01-30T19:00:00.000Z', source: 'system' },
+      { key: 'booking_to', description: 'End of booking (range only; omit if using booking_at)', example: '2025-02-02T11:00:00.000Z', source: 'system' },
+      { key: 'booking_at', description: 'Scheduled time (single date only; omit if using booking_from/booking_to)', example: '2025-01-30T19:00:00.000Z', source: 'system' },
+      { key: 'location_id', description: 'Location ID', example: 'loc_1', source: 'catalog' },
+      { key: 'location_name', description: 'Location name', example: 'Main Store', source: 'catalog' },
+      { key: 'location_address', description: 'Location address', source: 'catalog' },
+    ],
     catalogItemType: 'service',
   },
   'Booking Cancelled': {
@@ -271,7 +291,15 @@ export const EVENT_PROPERTY_SCHEMAS = {
       ...MANDATORY,
       { key: 'booking_id', description: 'Booking identifier', example: 'book_001', source: 'system' },
     ],
-    catalogDriven: [],
+    catalogDriven: [
+      { key: 'booking_from', description: 'Start of booking (range only)', example: '2025-01-30T19:00:00.000Z', source: 'system' },
+      { key: 'booking_to', description: 'End of booking (range only)', example: '2025-02-02T11:00:00.000Z', source: 'system' },
+      { key: 'booking_at', description: 'Scheduled time (single date only)', example: '2025-01-30T19:00:00.000Z', source: 'system' },
+      { key: 'booking_created_at', description: 'When the booking was created', example: '2025-01-27T10:00:00.000Z', source: 'system' },
+      { key: 'location_id', description: 'Location ID', example: 'loc_1', source: 'catalog' },
+      { key: 'location_name', description: 'Location name', example: 'Main Store', source: 'catalog' },
+      { key: 'location_address', description: 'Location address', source: 'catalog' },
+    ],
     catalogItemType: null,
   },
   'Booking Confirmed': {
@@ -279,18 +307,30 @@ export const EVENT_PROPERTY_SCHEMAS = {
       ...MANDATORY,
       { key: 'booking_id', description: 'Booking identifier', example: 'book_001', source: 'system' },
     ],
-    catalogDriven: [],
+    catalogDriven: [
+      { key: 'booking_from', description: 'Start of booking (range only)', example: '2025-01-30T19:00:00.000Z', source: 'system' },
+      { key: 'booking_to', description: 'End of booking (range only)', example: '2025-02-02T11:00:00.000Z', source: 'system' },
+      { key: 'booking_at', description: 'Scheduled time (single date only)', example: '2025-01-30T19:00:00.000Z', source: 'system' },
+      { key: 'booking_created_at', description: 'When the booking was created', example: '2025-01-27T10:00:00.000Z', source: 'system' },
+      { key: 'location_id', description: 'Location ID', example: 'loc_1', source: 'catalog' },
+      { key: 'location_name', description: 'Location name', example: 'Main Store', source: 'catalog' },
+      { key: 'location_address', description: 'Location address', source: 'catalog' },
+    ],
     catalogItemType: 'service',
   },
   'Booking Checked in': {
     mandatory: [
       ...MANDATORY,
       { key: 'booking_id', description: 'Booking identifier', example: 'book_001', source: 'system' },
-      { key: 'location_id', description: 'Check-in location ID', example: 'loc_1', source: 'catalog' },
-      { key: 'location_name', description: 'Check-in location name', example: 'Main Store', source: 'catalog' },
     ],
     catalogDriven: [
-      { key: 'location_address', description: 'Check-in location address', source: 'catalog' },
+      { key: 'booking_from', description: 'Start of booking (range only)', example: '2025-01-30T19:00:00.000Z', source: 'system' },
+      { key: 'booking_to', description: 'End of booking (range only)', example: '2025-02-02T11:00:00.000Z', source: 'system' },
+      { key: 'booking_at', description: 'Scheduled time (single date only)', example: '2025-01-30T19:00:00.000Z', source: 'system' },
+      { key: 'booking_created_at', description: 'When the booking was created', example: '2025-01-27T10:00:00.000Z', source: 'system' },
+      { key: 'location_id', description: 'Location ID', example: 'loc_1', source: 'catalog' },
+      { key: 'location_name', description: 'Location name', example: 'Main Store', source: 'catalog' },
+      { key: 'location_address', description: 'Location address', source: 'catalog' },
     ],
     catalogItemType: null,
   },
@@ -299,7 +339,15 @@ export const EVENT_PROPERTY_SCHEMAS = {
       ...MANDATORY,
       { key: 'booking_id', description: 'Booking identifier', example: 'book_001', source: 'system' },
     ],
-    catalogDriven: [],
+    catalogDriven: [
+      { key: 'booking_from', description: 'Start of booking (range only)', example: '2025-01-30T19:00:00.000Z', source: 'system' },
+      { key: 'booking_to', description: 'End of booking (range only)', example: '2025-02-02T11:00:00.000Z', source: 'system' },
+      { key: 'booking_at', description: 'Scheduled time (single date only)', example: '2025-01-30T19:00:00.000Z', source: 'system' },
+      { key: 'booking_created_at', description: 'When the booking was created', example: '2025-01-27T10:00:00.000Z', source: 'system' },
+      { key: 'location_id', description: 'Location ID', example: 'loc_1', source: 'catalog' },
+      { key: 'location_name', description: 'Location name', example: 'Main Store', source: 'catalog' },
+      { key: 'location_address', description: 'Location address', source: 'catalog' },
+    ],
     catalogItemType: null,
   },
   'Booking Not Attended': {
@@ -307,7 +355,15 @@ export const EVENT_PROPERTY_SCHEMAS = {
       ...MANDATORY,
       { key: 'booking_id', description: 'Booking identifier', example: 'book_001', source: 'system' },
     ],
-    catalogDriven: [],
+    catalogDriven: [
+      { key: 'booking_from', description: 'Start of booking (range only)', example: '2025-01-30T19:00:00.000Z', source: 'system' },
+      { key: 'booking_to', description: 'End of booking (range only)', example: '2025-02-02T11:00:00.000Z', source: 'system' },
+      { key: 'booking_at', description: 'Scheduled time (single date only)', example: '2025-01-30T19:00:00.000Z', source: 'system' },
+      { key: 'booking_created_at', description: 'When the booking was created', example: '2025-01-27T10:00:00.000Z', source: 'system' },
+      { key: 'location_id', description: 'Location ID', example: 'loc_1', source: 'catalog' },
+      { key: 'location_name', description: 'Location name', example: 'Main Store', source: 'catalog' },
+      { key: 'location_address', description: 'Location address', source: 'catalog' },
+    ],
     catalogItemType: null,
   },
 }
@@ -359,14 +415,13 @@ function flattenOptionsToProperties(item, properties) {
 function buildKlaviyoItemFromProduct(product, quantity = 1, includeOptions = false) {
   if (!product) return {}
   const item = {
-    product_id: product.id,
-    product_name: product.name,
-    product_url: product.url ?? '',
+    id: product.id,
+    name: product.name,
+    url: product.url ?? '',
     sku: product.sku ?? product.id,
     image_url: product.imageUrl ?? '',
     price: product.price,
     quantity: Number(quantity) || 1,
-    currency: product.currency ?? 'USD',
     categories: Array.isArray(product.categories) ? product.categories : (product.categories ? [product.categories] : []),
     brand: product.brand ?? '',
   }
@@ -381,7 +436,7 @@ function buildKlaviyoItemFromProduct(product, quantity = 1, includeOptions = fal
 
 /**
  * Derive top-level brands, item_names, and categories lists from an items array (Klaviyo item shape).
- * @param {object[]} items - Array of { product_name, brand, categories }
+ * @param {object[]} items - Array of { name, id, brand, categories }
  * @returns {{ brands: string[], item_names: string[], categories: string[] }}
  */
 export function deriveOrderListsFromItems(items) {
@@ -389,7 +444,7 @@ export function deriveOrderListsFromItems(items) {
     return { brands: [], item_names: [], categories: [] }
   }
   const brands = [...new Set(items.map((i) => i.brand).filter(Boolean))]
-  const item_names = items.map((i) => i.product_name ?? i.product_id ?? '')
+  const item_names = items.map((i) => i.name ?? i.id ?? '')
   const categories = [...new Set(items.flatMap((i) => (Array.isArray(i.categories) ? i.categories : i.categories ? [i.categories] : [])))]
   return { brands, item_names, categories }
 }
@@ -398,16 +453,14 @@ export function deriveOrderListsFromItems(items) {
 function buildKlaviyoItemFromService(service, quantity = 1) {
   if (!service) return {}
   return {
-    product_id: service.id,
-    product_name: service.name,
-    product_url: service.url ?? '',
+    id: service.id,
+    name: service.name,
+    url: service.url ?? '',
     sku: service.sku ?? service.id,
     image_url: service.imageUrl ?? '',
     price: service.price ?? 0,
     quantity: Number(quantity) || 1,
-    currency: service.currency ?? 'USD',
     categories: Array.isArray(service.categories) ? service.categories : (service.categories ? [service.categories] : []),
-    brand: service.brand ?? '',
   }
 }
 
@@ -415,16 +468,14 @@ function buildKlaviyoItemFromService(service, quantity = 1) {
 function buildKlaviyoItemFromSubscription(sub, quantity = 1) {
   if (!sub) return {}
   return {
-    product_id: sub.id,
-    product_name: sub.name,
-    product_url: sub.url ?? '',
+    id: sub.id,
+    name: sub.name,
+    url: sub.url ?? '',
     sku: sub.sku ?? sub.id,
     image_url: sub.imageUrl ?? '',
     price: sub.price ?? 0,
     quantity: Number(quantity) || 1,
-    currency: sub.currency ?? 'USD',
     categories: Array.isArray(sub.categories) ? sub.categories : (sub.categories ? [sub.categories] : []),
-    brand: sub.brand ?? '',
   }
 }
 
@@ -456,7 +507,7 @@ export function buildItemsArrayFromCatalog(catalog, maxItems = 3, catalogKind, i
   const take = Math.min(maxItems, Math.max(1, products.length))
   chosen = products.length ? products.slice(0, take) : []
   if (chosen.length === 0) {
-    return [{ product_id: 'prod_sample', product_name: 'Sample Product', product_url: '', sku: 'prod_sample', image_url: '', price: 29.99, quantity: 1, currency: 'USD', categories: [], brand: '' }]
+    return [{ id: 'prod_sample', name: 'Sample Product', url: '', sku: 'prod_sample', image_url: '', price: 29.99, quantity: 1, categories: [], brand: '' }]
   }
   return chosen.map((p) => buildKlaviyoItemFromProduct(p, 1, includeOptions))
 }
@@ -572,20 +623,18 @@ export function buildSampleEventProperties(eventName, catalog, context = {}) {
 
   if (!isOrderLevelEvent) {
     if (effectiveItemKind === 'product' && item) {
-      properties.product_id = item.id
-      properties.product_name = item.name
-      properties.product_url = item.url ?? ''
+      properties.id = item.id
+      properties.name = item.name
+      properties.url = item.url ?? ''
       properties.price = item.price
-      properties.currency = item.currency ?? 'USD'
       if (item.categories?.length) properties.categories = item.categories
       if (item.brand) properties.brand = item.brand
       if (item.imageUrl) properties.image_url = item.imageUrl
     }
     if (effectiveItemKind === 'service' && item) {
-      properties.service_id = item.id
-      properties.service_name = item.name
+      properties.item_id = item.id
+      properties.item_name = item.name
       properties.price = item.price ?? 0
-      properties.currency = item.currency ?? 'USD'
       if (item.categories?.length) properties.categories = item.categories
       if (item.durationMinutes != null) properties.duration_minutes = item.durationMinutes
     }
@@ -593,7 +642,6 @@ export function buildSampleEventProperties(eventName, catalog, context = {}) {
       properties.subscription_id = item.id
       properties.subscription_name = item.name
       properties.price = item.price
-      properties.currency = item.currency ?? 'USD'
       const subInt = item.subscriptionInterval ?? item.subscriptionType ?? item.interval ?? 'monthly'
       const payInt = item.paymentInterval ?? item.subscriptionInterval ?? item.subscriptionType ?? item.interval ?? 'monthly'
       properties.subscription_interval = typeof subInt === 'string' ? subInt.toLowerCase() : 'monthly'
@@ -619,6 +667,7 @@ export function buildSampleEventProperties(eventName, catalog, context = {}) {
     for (const entry of schema.catalogDriven) {
       if (entry.source === 'range') continue
       if (!entry.catalogField) continue
+      if (effectiveItemKind !== 'product' && (entry.key === 'brand' || entry.key === 'brands')) continue
       if (entry.catalogField === 'options') {
         const optionName = keyToOptionName(entry.key)
         const opt = item.options?.find((o) => o?.name && String(o.name).toLowerCase() === optionName.toLowerCase())
@@ -662,21 +711,21 @@ export function buildSampleEventProperties(eventName, catalog, context = {}) {
   const cartValue = itemsArray.reduce((sum, i) => sum + (i.price || 0) * (i.quantity || 1), 0)
 
   const orderLists = deriveOrderListsFromItems(itemsArray)
+  const includeBrands = effectiveItemKind === 'product'
   if (eventName === 'Started Checkout') {
     properties.value = cartValue
-    properties.currency = itemsArray[0]?.currency ?? 'USD'
     properties.item_count = itemsArray.length
     properties.items = itemsArray
-    properties.brands = orderLists.brands
+    if (includeBrands) properties.brands = orderLists.brands
     properties.item_names = orderLists.item_names
     properties.categories = orderLists.categories
   }
   if (eventName === 'Placed Order') {
     properties.order_id = context.orderId ?? 'ord_001'
     properties.value = context.value ?? cartValue
-    properties.value_currency = context.valueCurrency ?? itemsArray[0]?.currency ?? 'USD'
+    properties.item_count = itemsArray.length
     properties.items = itemsArray
-    properties.brands = orderLists.brands
+    if (includeBrands) properties.brands = orderLists.brands
     properties.item_names = orderLists.item_names
     properties.categories = orderLists.categories
     properties.source = context.orderSource ?? 'online'
@@ -704,26 +753,21 @@ export function buildSampleEventProperties(eventName, catalog, context = {}) {
   }
   if (eventName === 'Ordered Product' && item) {
     properties.order_id = context.orderId ?? 'ord_001'
-    if (effectiveItemKind === 'service') {
-      properties.service_id = item.id
-      properties.service_name = item.name
-    } else {
-      properties.product_id = item.id
-      properties.product_name = item.name
-      if (item.url) properties.product_url = item.url
-      if (item.imageUrl) properties.image_url = item.imageUrl
-      if (item.brand) properties.brand = item.brand
-      flattenOptionsToProperties(item, properties)
-    }
+    properties.id = item.id
+    properties.name = item.name
+    properties.url = item.url ?? ''
+    if (item.imageUrl) properties.image_url = item.imageUrl
+    if (includeBrands && item.brand) properties.brand = item.brand
+    flattenOptionsToProperties(item, properties)
     properties.quantity = 1
     properties.price = item.price ?? 0
-    properties.currency = item.currency ?? 'USD'
     if (item.categories?.length) properties.categories = item.categories
   }
   if (['Fulfilled Order', 'Cancelled Order'].includes(eventName)) {
     properties.order_id = context.orderId ?? 'ord_001'
     properties.items = itemsArray
-    properties.brands = orderLists.brands
+    properties.item_count = itemsArray.length
+    if (includeBrands) properties.brands = orderLists.brands
     properties.item_names = orderLists.item_names
     properties.categories = orderLists.categories
     if (context.orderSource === 'instore') {
@@ -736,9 +780,9 @@ export function buildSampleEventProperties(eventName, catalog, context = {}) {
   if (eventName === 'Refunded Order') {
     properties.order_id = context.orderId ?? 'ord_001'
     properties.value = context.value ?? cartValue
-    properties.value_currency = context.valueCurrency ?? 'USD'
+    properties.item_count = itemsArray.length
     properties.items = itemsArray
-    properties.brands = orderLists.brands
+    if (includeBrands) properties.brands = orderLists.brands
     properties.item_names = orderLists.item_names
     properties.categories = orderLists.categories
     if (context.orderSource === 'instore') {
@@ -750,10 +794,9 @@ export function buildSampleEventProperties(eventName, catalog, context = {}) {
   }
   if (['Booking Created', 'Booking Reminder', 'Booking Confirmed', 'Booking Checked in', 'Booking Attended', 'Booking Not Attended', 'Booking Cancelled', 'Booking Updated'].includes(eventName)) {
     if (item) {
-      properties.service_id = item.id
-      properties.service_name = item.name
+      properties.item_id = item.id
+      properties.item_name = item.name
       properties.price = item.price ?? 0
-      properties.currency = item.currency ?? 'USD'
     }
     properties.booking_id = 'book_001'
     // Booking date vs date range, driven by service.bookingDateType
@@ -785,6 +828,7 @@ export function buildSampleEventProperties(eventName, catalog, context = {}) {
       const to = new Date(sessionMs + lengthDays * DAY_MS).toISOString()
       properties.booking_from = from
       properties.booking_to = to
+      // Range: do not set booking_at
     } else {
       properties.booking_at = new Date(sessionMs).toISOString()
     }
@@ -814,12 +858,11 @@ export function buildSampleEventProperties(eventName, catalog, context = {}) {
     if (item && Array.isArray(item.bookingType) && item.bookingType.length > 0) {
       properties.booking_type = item.bookingType[0]
     }
-    if (['Booking Checked in', 'Booking Attended', 'Booking Created'].includes(eventName)) {
-      const loc = getLocationForPreview(catalog, context)
-      properties.location_id = loc.location_id
-      properties.location_name = loc.location_name
-      properties.location_address = loc.location_address
-    }
+    // Location data consistently on all booking events when applicable
+    const loc = getLocationForPreview(catalog, context)
+    properties.location_id = loc.location_id
+    properties.location_name = loc.location_name
+    properties.location_address = loc.location_address
   }
   if (eventName === 'Subscription Expiry Reminder') {
     properties.subscription_id = item?.id ?? 'sub_123'

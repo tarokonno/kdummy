@@ -35,6 +35,9 @@ export default function ConfigureEventsTab() {
   }
 
   const catalog = sampleCatalogForBusinessType(businessTypeId)
+  const bt = getBusinessTypeById(businessTypeId)
+  const catalogKind =
+    bt?.templateKey === 'service' ? 'service' : bt?.templateKey === 'subscription' ? 'subscription' : 'product'
   const orderSource = eventName && (eventName.includes('Order') || eventName.includes('Checkout')) ? 'online' : undefined
   const sampleProperties = buildSampleEventProperties(eventName, catalog, {
     businessTypeId: businessTypeId || undefined,
@@ -43,6 +46,7 @@ export default function ConfigureEventsTab() {
     orderId: 'ord_001',
     value: 79.98,
     orderSource,
+    catalogKind,
   }).properties
   const klaviyoPayload = samplePropertiesToKlaviyoEventPayload(sampleProperties, eventName)
 

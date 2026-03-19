@@ -110,18 +110,22 @@ function toSnakeCase(str) {
  * Option-derived fields (size, color, etc.) are omitted from the payload—they are for catalog/UI only.
  */
 function lineItemsToKlaviyoItems(lineItems, journeyType) {
-  return lineItems.map((l) => ({
-    product_id: l.productId ?? l.subscriptionId ?? l.serviceId ?? l.id,
-    product_name: l.name,
-    product_url: l.url ?? '',
-    sku: l.sku ?? l.productId ?? l.id ?? '',
-    image_url: l.imageUrl ?? '',
-    price: l.price,
-    quantity: l.quantity ?? 1,
-    currency: l.currency ?? 'USD',
-    categories: Array.isArray(l.categories) ? l.categories : [],
-    brand: l.brand ?? '',
-  }))
+  const includeBrand = journeyType === 'ecommerce'
+  return lineItems.map((l) => {
+    const item = {
+      id: l.productId ?? l.subscriptionId ?? l.serviceId ?? l.id,
+      name: l.name,
+      url: l.url ?? '',
+      sku: l.sku ?? l.productId ?? l.id ?? '',
+      image_url: l.imageUrl ?? '',
+      price: l.price,
+      quantity: l.quantity ?? 1,
+      categories: Array.isArray(l.categories) ? l.categories : [],
+    }
+    // Brands/currency only make sense for product (ecommerce) items.
+    if (includeBrand && l.brand) item.brand = l.brand
+    return item
+  })
 }
 
 /**
@@ -257,12 +261,17 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
       const unitRaw = cfg.unit ?? cfg.offsetUnit
       const unit = unitRaw === 'days' ? 'days' : 'minutes'
       if (mode === 'range') {
-        const min = Number(cfg.min ?? cfg.offsetMin)
-        const max = Number(cfg.max ?? cfg.offsetMax)
+        const rawMin = cfg.min ?? cfg.offsetMin
+        const rawMax = cfg.max ?? cfg.offsetMax
+        if (rawMin == null || rawMin === '' || rawMax == null || rawMax === '') return acc
+        const min = Number(rawMin)
+        const max = Number(rawMax)
         if (Number.isFinite(min) && Number.isFinite(max)) acc[key] = { mode, unit, min, max }
         return acc
       }
-      const value = Number(cfg.value ?? cfg.offsetValue)
+      const rawVal = cfg.value ?? cfg.offsetValue
+      if (rawVal == null || rawVal === '') return acc
+      const value = Number(rawVal)
       if (Number.isFinite(value)) acc[key] = { mode, unit, value }
       return acc
     }, {})
@@ -412,7 +421,6 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
     let lastOrderId = null
     let lastOrderItems = []
     let lastOrderValue = 0
-    let lastOrderCurrency = 'USD'
     let sequenceIndex = 0
     let previousEventMs = runStartMs
     let placedOrderCountInRun = 0
@@ -478,8 +486,8 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
         const stepMs = (runEndMs - runStartMs) / Math.max(1, emitSequence.length)
         eventMs = runStartMs + i * stepMs
       }
-      // Only emit Subscription Expiry Reminder and Subscription Renewed for yearly plans; Subscription Expired sends for all intervals (cancel then expire at period end).
-      if (timingProfileId === 'subscription_interval' && (item.eventName === 'Subscription Expiry Reminder' || item.eventName === 'Subscription Renewed')) {
+      // Subscription Expiry Reminder: yearly plans only. Subscription Renewed: all intervals (monthly + yearly).
+      if (timingProfileId === 'subscription_interval' && item.eventName === 'Subscription Expiry Reminder') {
         const runSubCatalog = runChosenSubscription || defaultSubCatalog
         const raw = runSubCatalog?.subscriptionInterval ?? runSubCatalog?.subscriptionType ?? runSubCatalog?.interval ?? ''
         const isYearly = /^yearly?$/i.test(String(raw).trim())
@@ -510,7 +518,6 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
             orderId: lastOrderId,
             lineItem: line,
             value: (line.price || 0) * (line.quantity || 1),
-            valueCurrency: line.currency || 'USD',
           })
         })
         previousEventMs = lastMs
@@ -524,7 +531,6 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
         lastOrderId = `ord_${run}_${orderIndex}`
         lastOrderItems = lineItemsToKlaviyoItems(lineItems, catalogTypeForLineItems)
         lastOrderValue = orderValue
-        lastOrderCurrency = lineItems[0]?.currency ?? 'USD'
         placedOrderCountInRun++
         const orderType = isSubscription
           ? (placedOrderCountInRun === 1 ? 'New subscription' : 'Recurring subscription')
@@ -543,7 +549,7 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
           orderId: lastOrderId,
           items: lastOrderItems,
           value: orderValue,
-          valueCurrency: lastOrderCurrency,
+          item_count: lineItems.length,
           ...(includeBrands && { brands: orderLists.brands }),
           item_names: orderLists.item_names,
           categories: orderLists.categories,
@@ -585,7 +591,6 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
             ...profileNameFields,
             lineItem: line,
             value: (line.price || 0) * (line.quantity || 1),
-            valueCurrency: line.currency || 'USD',
           })
         })
         previousEventMs = lastMs
@@ -610,7 +615,6 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
             ...profileNameFields,
             lineItem: line,
             value: (line.price || 0) * (line.quantity || 1),
-            valueCurrency: line.currency || 'USD',
           })
         })
         previousEventMs = lastMs
@@ -637,7 +641,6 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
           items: checkoutItems,
           value: cartValue,
           item_count: checkoutItems.length,
-          currency: checkoutLineItems[0]?.currency ?? 'USD',
           ...(includeBrandsCheckout && { brands: checkoutLists.brands }),
           item_names: checkoutLists.item_names,
           categories: checkoutLists.categories,
@@ -659,6 +662,7 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
       }
       if (['Fulfilled Order', 'Cancelled Order', 'Refunded Order'].includes(item.eventName)) {
         orderPayload.items = lastOrderItems
+        orderPayload.item_count = lastOrderItems.length
         const orderLists = deriveOrderListsFromItems(lastOrderItems)
         const includeBrandsOrder = journey.type === 'ecommerce_online' || journey.type === 'ecommerce_instore'
         if (includeBrandsOrder) orderPayload.brands = orderLists.brands
@@ -666,18 +670,21 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
         orderPayload.categories = orderLists.categories
         if (item.eventName === 'Refunded Order') {
           orderPayload.value = lastOrderValue
-          orderPayload.valueCurrency = lastOrderCurrency
         }
         if (orderSource === 'instore' && runLocation) Object.assign(orderPayload, runLocation)
       }
-      if (['Booking Checked in', 'Booking Attended', 'Booking Created'].includes(item.eventName) && runLocation) {
+      const bookingEventNames = ['Booking Created', 'Booking Updated', 'Booking Reminder', 'Booking Confirmed', 'Booking Checked in', 'Booking Attended', 'Booking Not Attended', 'Booking Cancelled']
+      if (bookingEventNames.includes(item.eventName) && runLocation) {
         Object.assign(orderPayload, runLocation)
       }
-      const bookingEventNames = ['Booking Created', 'Booking Updated', 'Booking Reminder', 'Booking Confirmed', 'Booking Checked in', 'Booking Attended', 'Booking Not Attended', 'Booking Cancelled']
       if (bookingEventNames.includes(item.eventName) && lineItems.length > 0) {
         const runBookingService = lineItems[0]._bookingService
         const bookingAtDays = runTimingProfile.bookingAtDaysFromCreate ?? 3
         const bookingAtMs = runStartMs + bookingAtDays * DAY_MS
+        orderPayload.booking_id = `book_${run}_${orderIndex}`
+        orderPayload.item_id = lineItems[0].serviceId ?? lineItems[0].productId ?? lineItems[0].id
+        orderPayload.item_name = lineItems[0].name
+        orderPayload.price = lineItems[0].price ?? 0
         orderPayload.booking_created_at = new Date(runStartMs).toISOString()
         if (runBookingService) {
           const dateTypeRaw = typeof runBookingService.bookingDateType === 'string' ? runBookingService.bookingDateType.toLowerCase() : 'single date'
@@ -704,7 +711,6 @@ export function generateEvents({ journeyId, selectedEventNames, catalog, options
         orderPayload.subscription_id = runSubscriptionLineItem.subscriptionId ?? runSubscriptionLineItem.id
         orderPayload.subscription_name = runSubscriptionLineItem.name
         orderPayload.price = runSubscriptionLineItem.price
-        orderPayload.currency = runSubscriptionLineItem.currency ?? 'USD'
         orderPayload.subscription_started_at = new Date(subscriptionStartMs).toISOString()
         if (runSubscriptionLineItem.subscriptionInterval) orderPayload.subscription_interval = runSubscriptionLineItem.subscriptionInterval
         if (runSubscriptionLineItem.paymentInterval) orderPayload.payment_interval = runSubscriptionLineItem.paymentInterval

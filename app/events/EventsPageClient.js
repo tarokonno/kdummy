@@ -480,7 +480,7 @@ export default function EventsPageClient() {
   const getDefaultTimingLabel = useCallback(
     (eventName, opts = {}) => {
       const { isFirstSelected = false, isBookingDynamicEvent = false, isSubscriptionDynamicEvent = false } = opts
-      if (isFirstSelected) return 'First event'
+      if (isFirstSelected) return 'None (auto)'
       if (isBookingDynamicEvent) return 'Dynamic (based on booking session)'
       if (isSubscriptionDynamicEvent) return 'Dynamic (based on subscription interval)'
       if (eventName === 'Added to Cart') return '2 minutes'
@@ -551,7 +551,8 @@ export default function EventsPageClient() {
     const firstSelectedIndex = availableEventNames.findIndex((n) => selectedEventNames.includes(n))
     const customEventTimings =
       selectedEventNames.length > 0
-        ? selectedEventNames.map((name) => {
+        ? selectedEventNames
+          .map((name) => {
             const idxInOrdered = availableEventNames.findIndex((n) => n === name)
             const isFirstSelected = idxInOrdered !== -1 && idxInOrdered === firstSelectedIndex
             const cfg = eventOffsets[name] || {}
@@ -571,14 +572,20 @@ export default function EventsPageClient() {
                 name === 'Subscription Expired')
 
             if (isFirstSelected || isBookingDynamicEvent || isSubscriptionDynamicEvent) {
-              return { eventName: name, offsetMode: 'fixed', offsetValue: null, offsetUnit: cfg.unit || 'minutes' }
+              return null
             }
 
             if (cfg.mode === 'range') {
-              return { eventName: name, offsetMode: 'range', offsetMin: cfg.min ?? null, offsetMax: cfg.max ?? null, offsetUnit: cfg.unit || 'minutes' }
+              const min = String(cfg.min ?? '').trim()
+              const max = String(cfg.max ?? '').trim()
+              if (!min && !max) return null
+              return { eventName: name, offsetMode: 'range', offsetMin: min || null, offsetMax: max || null, offsetUnit: cfg.unit || 'minutes' }
             }
-            return { eventName: name, offsetMode: 'fixed', offsetValue: cfg.value ?? null, offsetUnit: cfg.unit || 'minutes' }
+            const value = String(cfg.value ?? '').trim()
+            if (!value) return null
+            return { eventName: name, offsetMode: 'fixed', offsetValue: value, offsetUnit: cfg.unit || 'minutes' }
           })
+          .filter(Boolean)
         : undefined
     const result = generateEvents({
       journeyId: selectedJourneyId,
@@ -1179,7 +1186,7 @@ export default function EventsPageClient() {
                             const timingLabel =
                               isSelected
                                 ? (isFirstSelected
-                                    ? 'First event'
+                                    ? 'None (auto)'
                                     : cfg.mode === 'range'
                                       ? `Between ${cfg.min ?? '…'}–${cfg.max ?? '…'} ${cfg.unit || 'minutes'}`
                                       : cfg.value != null && String(cfg.value).trim() !== ''
@@ -1930,6 +1937,17 @@ export default function EventsPageClient() {
                   (editingEventName === 'Subscription Renewed' ||
                     editingEventName === 'Subscription Expiry Reminder' ||
                     editingEventName === 'Subscription Expired')
+                const firstSelectedIndex = availableEventNames.findIndex((n) => selectedEventNames.includes(n))
+                const idxInOrdered = availableEventNames.findIndex((n) => n === editingEventName)
+                const isFirstSelected = idxInOrdered !== -1 && idxInOrdered === firstSelectedIndex
+                if (isFirstSelected) {
+                  return (
+                    <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
+                      <p className="text-sm font-medium text-gray-700">Time between events</p>
+                      <p className="text-xs text-gray-500 mt-1">None (auto)</p>
+                    </div>
+                  )
+                }
                 if (isBookingDynamicEvent || isSubscriptionDynamicEvent) {
                   return (
                     <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
