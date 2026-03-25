@@ -701,9 +701,9 @@ const ProfilePropertiesTab = forwardRef(function ProfilePropertiesTab(
       )}
 
       {/* Properties List - wrapped in card when configureHeader provided */}
-      <div className={embeddedForGenerate ? 'hidden' : ''}>
+      <div className={embeddedForGenerate ? 'hidden' : 'w-full'}>
         {configureHeader ? (
-          <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+          <div className="w-full rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
             <div className="bg-gradient-to-r from-indigo-50 to-white px-6 py-4 border-b border-gray-200">
               {configureHeader}
             </div>

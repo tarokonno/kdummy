@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Navigation from '@/components/Navigation'
 import {
   createEmptyItem,
   getTemplate,
@@ -15,6 +14,7 @@ import {
   getPresetsByTemplate,
 } from '@/src/catalog'
 import { useConfirm } from '@/context/ConfirmContext'
+import PageShell from '@/components/PageShell'
 
 const ID_PREFIX = { product: 'PROD', service: 'SERV', subscription: 'SUB' }
 
@@ -96,10 +96,7 @@ export default function CreateProductPage() {
   const presetsForTemplate = getPresetsByTemplate(templateType)
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation activePage="catalog" />
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
+    <PageShell>
           <div className="mb-6">
             <button
               onClick={() => router.push('/catalog')}
@@ -309,8 +306,6 @@ export default function CreateProductPage() {
               </div>
             )}
           </div>
-        </div>
-      </main>
-    </div>
+    </PageShell>
   )
 }

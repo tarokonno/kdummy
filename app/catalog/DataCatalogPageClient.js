@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
-import Navigation from '@/components/Navigation'
 import Link from 'next/link'
 import { getActiveApiKey } from '@/lib/storage'
 import { fetchWithApiKey } from '@/lib/apiClient'
@@ -12,6 +11,7 @@ import { loadCatalog, loadAllCatalog, upsertCatalogItem, deleteCatalogItem } fro
 import { CatalogFormFields } from '@/src/catalog/CatalogFormFields.js'
 import { CreateCatalogModal } from '@/components/CreateCatalogModal'
 import { useConfirm } from '@/context/ConfirmContext'
+import PageShell from '@/components/PageShell'
 
 const TEMPLATE_KEYS = ['product', 'service', 'subscription']
 
@@ -33,10 +33,7 @@ export default function DataCatalogPageClient() {
 
   if (!hasApiKey) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navigation activePage="catalog" />
-        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          <div className="px-4 py-6 sm:px-0">
+      <PageShell>
             <div className="rounded-xl border border-dashed border-indigo-200 bg-indigo-50 px-6 py-8 text-center">
               <h2 className="text-xl font-semibold text-gray-900">Connect a Klaviyo account to use the Data Catalog</h2>
               <p className="mt-2 text-sm text-gray-600 max-w-xl mx-auto">
@@ -51,18 +48,12 @@ export default function DataCatalogPageClient() {
                 </Link>
               </div>
             </div>
-          </div>
-        </main>
-      </div>
+      </PageShell>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation activePage="catalog" />
-
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
+    <PageShell>
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-gray-900">Data Catalog</h1>
             <p className="mt-2 text-sm text-gray-600">
@@ -117,15 +108,13 @@ export default function DataCatalogPageClient() {
           </div>
 
           {/* Tab Content */}
-          <div className="bg-white shadow rounded-lg p-6">
+          <div className="w-full bg-white shadow rounded-lg p-6 overflow-hidden">
             {activeTab === 'products' && <ProductsServicesTab />}
             {activeTab === 'locations' && <LocationsTab />}
             {activeTab === 'loyalty' && <LoyaltyTab />}
             {activeTab === 'countries' && <CountriesTab />}
           </div>
-        </div>
-      </main>
-    </div>
+    </PageShell>
   )
 }
 
@@ -230,7 +219,7 @@ function ProductsServicesTab() {
   }
 
   return (
-    <div>
+    <div className="w-full">
       <div className="mb-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h2 className="text-xl font-semibold text-gray-900">Catalog Items</h2>
@@ -602,7 +591,7 @@ function LocationsTab() {
   }
 
   return (
-    <div>
+    <div className="w-full">
       <div className="flex justify-between items-center mb-4">
         <div>
           <h2 className="text-xl font-semibold text-gray-900">Locations</h2>
@@ -724,7 +713,7 @@ function LoyaltyTab() {
   }
 
   return (
-    <div>
+    <div className="w-full">
       <div className="mb-4">
         <h2 className="text-xl font-semibold text-gray-900">Loyalty Configuration</h2>
         <p className="text-sm text-gray-600 mt-1">
@@ -893,7 +882,7 @@ function CountriesTab() {
   }
 
   return (
-    <div>
+    <div className="w-full">
       <div className="flex justify-between items-center mb-4">
         <div>
           <h2 className="text-xl font-semibold text-gray-900">Countries</h2>
@@ -912,7 +901,7 @@ function CountriesTab() {
       {loading ? (
         <div className="text-center py-8 text-gray-500">Loading...</div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="w-full overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>

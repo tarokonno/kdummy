@@ -1,5 +1,6 @@
 import './globals.css'
 import { ConfirmProvider } from '@/context/ConfirmContext'
+import AppShell from '@/components/AppShell'
 
 export const metadata = {
   title: 'K:Dummy - Klaviyo Dummy Data Generator',
@@ -10,7 +11,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <ConfirmProvider>{children}</ConfirmProvider>
+        <ConfirmProvider>
+          <AppShell>{children}</AppShell>
+        </ConfirmProvider>
       </body>
     </html>
   )

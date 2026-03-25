@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { getAccounts, getActiveApiKey } from '@/lib/storage'
+import PageShell from '@/components/PageShell'
 
 export default function HomePageClient() {
   const [hasAccount, setHasAccount] = useState(null)
@@ -18,13 +19,10 @@ export default function HomePageClient() {
   const isConnected = hasAccount && activeKey
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="max-w-7xl mx-auto py-8 sm:px-6 lg:px-8">
-        <div className="px-4 sm:px-0">
-          {/* Hero with logo */}
+    <PageShell>
+          {/* Hero */}
           <div className="text-center">
-            <div className="inline-flex items-center justify-center gap-3 mb-4">
-              <img src="/kdummy-logo.png" alt="" className="h-14 w-14 rounded-xl object-contain" aria-hidden />
+            <div className="mb-4">
               <span className="text-4xl font-extrabold text-gray-900 sm:text-5xl tracking-tight">
                 K:Dummy
               </span>
@@ -110,8 +108,6 @@ export default function HomePageClient() {
               </ul>
             </div>
           </div>
-        </div>
-      </main>
-    </div>
+    </PageShell>
   )
 }

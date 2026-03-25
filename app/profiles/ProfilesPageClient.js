@@ -3,12 +3,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import Navigation from '@/components/Navigation'
 import ProfilePropertiesTab from '@/components/ProfilePropertiesTab'
 import GenerateProfilesTab from '@/components/GenerateProfilesTab'
 import { useConfirm } from '@/context/ConfirmContext'
 import { fetchWithApiKey } from '@/lib/apiClient'
 import { getActiveApiKey } from '@/lib/storage'
+import PageShell from '@/components/PageShell'
 
 export default function ProfilesPageClient() {
   const router = useRouter()
@@ -134,10 +134,7 @@ export default function ProfilesPageClient() {
 
   if (!hasApiKey) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navigation activePage="profiles" />
-        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          <div className="px-4 py-6 sm:px-0">
+      <PageShell>
             <div className="rounded-xl border border-dashed border-indigo-200 bg-indigo-50 px-6 py-8 text-center">
               <h2 className="text-xl font-semibold text-gray-900">Connect a Klaviyo account to generate profiles</h2>
               <p className="mt-2 text-sm text-gray-600 max-w-xl mx-auto">
@@ -152,9 +149,7 @@ export default function ProfilesPageClient() {
                 </Link>
               </div>
             </div>
-          </div>
-        </main>
-      </div>
+      </PageShell>
     )
   }
 
@@ -169,11 +164,8 @@ export default function ProfilesPageClient() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation activePage="profiles" />
-
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
+    <>
+      <PageShell>
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-gray-900">Profiles</h1>
             <p className="mt-2 text-sm text-gray-600">
@@ -363,8 +355,7 @@ export default function ProfilesPageClient() {
               />
             </div>
           )}
-        </div>
-      </main>
+      </PageShell>
 
       {/* Profile Details Modal */}
       {selectedProfile && (
@@ -464,6 +455,6 @@ export default function ProfilesPageClient() {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }

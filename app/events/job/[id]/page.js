@@ -3,7 +3,7 @@
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import React, { useEffect, useMemo, useState } from 'react'
-import Navigation from '@/components/Navigation'
+import PageShell from '@/components/PageShell'
 
 const RUN_HISTORY_KEY = 'kdummy_event_runs'
 
@@ -101,25 +101,17 @@ export default function EventJobDetailPage() {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navigation activePage="events" />
-        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          <div className="px-4 py-6 sm:px-0">
+      <PageShell>
             <div className="bg-white shadow rounded-lg p-8 text-center">
               <p className="text-sm text-gray-500">Loading…</p>
             </div>
-          </div>
-        </main>
-      </div>
+      </PageShell>
     )
   }
 
   if (!jobId || !run) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navigation activePage="events" />
-        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          <div className="px-4 py-6 sm:px-0">
+      <PageShell>
             <div className="bg-white shadow rounded-lg p-8 text-center">
               <h2 className="text-lg font-semibold text-gray-900">Job not found</h2>
               <p className="mt-2 text-sm text-gray-500">This run may have been deleted or the link is invalid.</p>
@@ -130,9 +122,7 @@ export default function EventJobDetailPage() {
                 ← Back to Jobs
               </Link>
             </div>
-          </div>
-        </main>
-      </div>
+      </PageShell>
     )
   }
 
@@ -147,10 +137,7 @@ export default function EventJobDetailPage() {
   const profileCount = profileSummaries.length
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation activePage="events" />
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
+    <PageShell>
           <Link
             href="/events?tab=jobs"
             className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 mb-6"
@@ -158,7 +145,7 @@ export default function EventJobDetailPage() {
             ← Back to Jobs
           </Link>
 
-          <div className="bg-white shadow rounded-lg overflow-hidden">
+          <div className="w-full bg-white shadow rounded-lg overflow-hidden">
             {/* Summary */}
             <div className="px-6 py-5 border-b border-gray-200">
               <h1 className="text-2xl font-bold text-gray-900">{summary.journeyName ?? 'Event run'}</h1>
@@ -389,8 +376,6 @@ export default function EventJobDetailPage() {
               )}
             </div>
           </div>
-        </div>
-      </main>
-    </div>
+    </PageShell>
   )
 }

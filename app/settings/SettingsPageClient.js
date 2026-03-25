@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
-import Navigation from '@/components/Navigation'
 import { getAccounts, saveAccount, deleteAccount, getActiveApiKey, setActiveApiKey } from '@/lib/storage'
 import { useConfirm } from '@/context/ConfirmContext'
+import PageShell from '@/components/PageShell'
 
 const SETTINGS_TABS = ['accounts', 'data']
 
@@ -129,9 +129,8 @@ export default function SettingsPageClient() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation activePage="settings" />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <>
+    <PageShell>
         <div className="bg-white shadow rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
             <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
@@ -294,7 +293,7 @@ export default function SettingsPageClient() {
             )}
           </div>
         </div>
-      </div>
+    </PageShell>
 
       <SettingsAccountModal
         isOpen={showAddForm}
@@ -305,7 +304,7 @@ export default function SettingsPageClient() {
         setFormData={setFormData}
         activeApiKey={activeApiKey}
       />
-    </div>
+    </>
   )
 }
 

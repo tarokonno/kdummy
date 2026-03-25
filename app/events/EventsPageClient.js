@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import Navigation from '@/components/Navigation'
 import { useRepeatOnHold } from '@/lib/useRepeatOnHold'
 import { JOURNEYS, getJourneyById, getUniqueEventNamesForJourney, getJourneysByType, getJourneyIdFromTypeAndVariant, isProductJourneyType } from '@/src/lib/events/journeyDefinitions'
 import { getEventDescription } from '@/src/lib/events/eventDefinitions'
@@ -19,6 +18,7 @@ import { apiClient } from '@/lib/apiClient'
 import { getActiveApiKey } from '@/lib/storage'
 import ConfigureEventsTab from '@/app/events/ConfigureEventsTab'
 import ColorizedJson from '@/components/ColorizedJson'
+import PageShell from '@/components/PageShell'
 
 const DATA_SOURCE_CATALOG = 'catalog'
 const DATA_SOURCE_INDUSTRY = 'industry'
@@ -130,10 +130,10 @@ export default function EventsPageClient() {
   const [timingStepMin, setTimingStepMin] = useState(linearDefaults?.stepMinutesMin ?? 2)
   const [timingStepMax, setTimingStepMax] = useState(linearDefaults?.stepMinutesMax ?? 10)
   const bookingSpacedDefaults = getTimingProfile('booking_spaced') || TIMING_PROFILES.booking_spaced
-  const defaultSessionDays = bookingSpacedDefaults?.bookingAtDaysFromCreate ?? 3
-  const [bookingSessionDaysMin, setBookingSessionDaysMin] = useState(String(defaultSessionDays))
-  const [bookingSessionDaysMax, setBookingSessionDaysMax] = useState(String(defaultSessionDays))
-  const [bookingSessionMode, setBookingSessionMode] = useState('fixed') // 'fixed' | 'range'
+  const defaultSessionDaysMin = 7
+  const defaultSessionDaysMax = 30
+  const [bookingSessionDaysMin, setBookingSessionDaysMin] = useState(String(defaultSessionDaysMin))
+  const [bookingSessionDaysMax, setBookingSessionDaysMax] = useState(String(defaultSessionDaysMax))
   const [profileMode, setProfileMode] = useState('auto') // 'auto' | 'selected'
   const [selectedProfileIds, setSelectedProfileIds] = useState([])
   const [availableProfiles, setAvailableProfiles] = useState([])
@@ -742,10 +742,7 @@ export default function EventsPageClient() {
 
   if (!hasApiKey) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navigation activePage="events" />
-        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          <div className="px-4 py-6 sm:px-0">
+      <PageShell>
             <div className="rounded-xl border border-dashed border-indigo-200 bg-indigo-50 px-6 py-8 text-center">
               <h2 className="text-xl font-semibold text-gray-900">Connect a Klaviyo account to generate events</h2>
               <p className="mt-2 text-sm text-gray-600 max-w-xl mx-auto">
@@ -760,17 +757,13 @@ export default function EventsPageClient() {
                 </Link>
               </div>
             </div>
-          </div>
-        </main>
-      </div>
+      </PageShell>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation activePage="events" />
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
+    <>
+    <PageShell>
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-gray-900">Events</h1>
             <p className="mt-2 text-sm text-gray-600">
@@ -821,7 +814,7 @@ export default function EventsPageClient() {
           </div>
 
           {eventsTab === 'jobs' && (
-            <div className="bg-white shadow rounded-lg overflow-hidden">
+            <div className="w-full bg-white shadow rounded-lg overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200 flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">Run history</h2>
@@ -901,13 +894,13 @@ export default function EventsPageClient() {
           )}
 
           {eventsTab === 'preview' && (
-            <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
+            <div className="w-full rounded-xl border border-gray-200 bg-white shadow-sm p-6">
               <ConfigureEventsTab />
             </div>
           )}
 
           {eventsTab === 'generate' && (
-          <div className="space-y-6">
+          <div className="w-full space-y-6">
             {/* Configuration: only show when not on confirmation */}
             {generateStep !== 'confirm' && (
             <>
@@ -1019,95 +1012,42 @@ export default function EventsPageClient() {
 
                     {journey?.timingProfile === 'booking_spaced' && (
                       <div className="rounded-lg border border-gray-200 bg-gray-50/30 p-4">
-                        <label className="block text-xs font-medium text-gray-700 mb-2 uppercase tracking-wide">Session offset</label>
-                        <p className="text-xs text-gray-500 mb-3">When the session happens after booking creation.</p>
-
-                        <div className="flex gap-2 mb-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setBookingSessionMode('fixed')
-                              setBookingSessionDaysMax(bookingSessionDaysMin)
-                            }}
-                            className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium ${
-                              bookingSessionMode === 'fixed'
-                                ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                                : 'border-gray-300 bg-white text-gray-700'
-                            }`}
-                          >
-                            Fixed
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setBookingSessionMode('range')}
-                            className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium ${
-                              bookingSessionMode === 'range'
-                                ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                                : 'border-gray-300 bg-white text-gray-700'
-                            }`}
-                          >
-                            Range
-                          </button>
-                        </div>
-
-                        {bookingSessionMode === 'fixed' ? (
-                          <div className="flex items-center gap-2 flex-wrap">
+                        <label className="block text-xs font-medium text-gray-700 mb-2 uppercase tracking-wide">Booking Timing</label>
+                        <p className="text-xs text-gray-500 mb-3">When the booking happens after booking creation.</p>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <div className="flex items-center gap-2">
                             <input
-                              id="bookingSessionDaysFixed"
+                              id="bookingSessionDaysMin"
                               type="number"
                               min={0}
                               max={90}
                               value={bookingSessionDaysMin}
-                              onChange={(e) => {
-                                setBookingSessionDaysMin(e.target.value)
-                                setBookingSessionDaysMax(e.target.value)
-                              }}
+                              onChange={(e) => setBookingSessionDaysMin(e.target.value)}
                               onBlur={() => {
                                 const n = Math.max(0, Math.min(90, parseInt(bookingSessionDaysMin, 10) || 0))
                                 setBookingSessionDaysMin(String(n))
+                              }}
+                              className="w-20 rounded-lg border border-gray-300 bg-white px-2 py-2.5 text-sm font-medium text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center"
+                            />
+                          </div>
+                          <span className="text-xs text-gray-600">to</span>
+                          <div className="flex items-center gap-2">
+                            <input
+                              id="bookingSessionDaysMax"
+                              type="number"
+                              min={0}
+                              max={90}
+                              value={bookingSessionDaysMax}
+                              onChange={(e) => setBookingSessionDaysMax(e.target.value)}
+                              onBlur={() => {
+                                const n = Math.max(0, Math.min(90, parseInt(bookingSessionDaysMax, 10) || 0))
                                 setBookingSessionDaysMax(String(n))
                               }}
                               className="w-20 rounded-lg border border-gray-300 bg-white px-2 py-2.5 text-sm font-medium text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center"
                             />
-                            <span className="text-xs text-gray-500">days</span>
                           </div>
-                        ) : (
-                          <div className="flex items-center gap-3 flex-wrap">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-600">Min</span>
-                              <input
-                                id="bookingSessionDaysMin"
-                                type="number"
-                                min={0}
-                                max={90}
-                                value={bookingSessionDaysMin}
-                                onChange={(e) => setBookingSessionDaysMin(e.target.value)}
-                                onBlur={() => {
-                                  const n = Math.max(0, Math.min(90, parseInt(bookingSessionDaysMin, 10) || 0))
-                                  setBookingSessionDaysMin(String(n))
-                                }}
-                                className="w-20 rounded-lg border border-gray-300 bg-white px-2 py-2.5 text-sm font-medium text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center"
-                              />
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-600">Max</span>
-                              <input
-                                id="bookingSessionDaysMax"
-                                type="number"
-                                min={0}
-                                max={90}
-                                value={bookingSessionDaysMax}
-                                onChange={(e) => setBookingSessionDaysMax(e.target.value)}
-                                onBlur={() => {
-                                  const n = Math.max(0, Math.min(90, parseInt(bookingSessionDaysMax, 10) || 0))
-                                  setBookingSessionDaysMax(String(n))
-                                }}
-                                className="w-20 rounded-lg border border-gray-300 bg-white px-2 py-2.5 text-sm font-medium text-gray-900 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center"
-                              />
-                            </div>
-                            <span className="text-xs text-gray-500">days</span>
-                          </div>
-                        )}
+                          <span className="text-xs text-gray-500">days</span>
+                        </div>
                       </div>
                     )}
 
@@ -1889,8 +1829,7 @@ export default function EventsPageClient() {
 
           </div>
           )}
-        </div>
-      </main>
+    </PageShell>
 
       {editingEventName && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30">
@@ -2103,6 +2042,6 @@ export default function EventsPageClient() {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
