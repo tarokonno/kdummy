@@ -814,8 +814,8 @@ export default function EventsPageClient() {
           </div>
 
           {eventsTab === 'jobs' && (
-            <div className="w-full bg-white shadow rounded-lg overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 flex flex-wrap items-center justify-between gap-4">
+            <div className="w-full rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+              <div className="bg-gradient-to-r from-indigo-50 to-white px-6 py-4 border-b border-gray-200 flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">Run history</h2>
                   <p className="text-sm text-gray-500 mt-1">Past event generation runs. Click a job to view details. Events are sent to Klaviyo with the <code className="bg-gray-100 px-1 rounded text-xs">(KD)</code> metric suffix.</p>
@@ -908,10 +908,9 @@ export default function EventsPageClient() {
             <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
               <div className="bg-gradient-to-r from-indigo-50 to-white px-6 py-4 border-b border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900">
-                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white text-sm font-bold mr-3">1</span>
                   Journey type & events
                 </h2>
-                <p className="text-sm text-gray-500 mt-1 ml-11">
+                <p className="text-sm text-gray-500 mt-1">
                   Choose what type of journey (online, in-store, booking, or subscription), then which events to generate.
                   In the next step you&apos;ll pick which items or industry template to use. K:Dummy auto appends
                   <code className="bg-gray-100 px-1 rounded text-xs ml-1">(KD)</code> to your event names, so they appear as
@@ -1168,10 +1167,9 @@ export default function EventsPageClient() {
             <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
               <div className="bg-gradient-to-r from-indigo-50 to-white px-6 py-4 border-b border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900">
-                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white text-sm font-bold mr-3">2</span>
                   Event Data
                 </h2>
-                <p className="text-sm text-gray-500 mt-1 ml-11">
+                <p className="text-sm text-gray-500 mt-1">
                   Choose where item data comes from, then which items to use in generated events. You can <button type="button" onClick={() => setEventsTab('preview')} className="text-indigo-600 hover:text-indigo-800 font-medium">preview event payloads</button> in the other tab.
                 </p>
               </div>
@@ -1513,10 +1511,9 @@ export default function EventsPageClient() {
             <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
               <div className="bg-gradient-to-r from-indigo-50 to-white px-6 py-4 border-b border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900">
-                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white text-sm font-bold mr-3">3</span>
                   Profile assignment
                 </h2>
-                <p className="text-sm text-gray-500 mt-1 ml-11">Who should the generated events be attributed to?</p>
+                <p className="text-sm text-gray-500 mt-1">Who should the generated events be attributed to?</p>
               </div>
               <div className="p-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

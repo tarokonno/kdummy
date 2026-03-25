@@ -1157,10 +1157,9 @@ export default function GenerateProfilesTab({ onAddCustomProperty, onEditCustomP
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-visible">
         <div className="bg-gradient-to-r from-indigo-50 to-white px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">
-            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white text-sm font-bold mr-3">1</span>
             Profile count
           </h2>
-          <p className="text-sm text-gray-500 mt-1 ml-11">Single profile or multiple (2–100). Country and location are set in Name &amp; location below.</p>
+          <p className="text-sm text-gray-500 mt-1">Single profile or multiple (2–100). Country and location are set in Name &amp; location below.</p>
         </div>
         <div className="p-6">
           <div className="max-w-xl">
@@ -1413,10 +1412,9 @@ export default function GenerateProfilesTab({ onAddCustomProperty, onEditCustomP
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
         <div className="bg-gradient-to-r from-indigo-50 to-white px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">
-            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white text-sm font-bold mr-3">2</span>
             Identifiers & consent
           </h2>
-          <p className="text-sm text-gray-500 mt-1 ml-11">
+          <p className="text-sm text-gray-500 mt-1">
             Choose which identifiers you set on profiles and which channels to opt profiles into.
           </p>
         </div>
@@ -1561,10 +1559,9 @@ export default function GenerateProfilesTab({ onAddCustomProperty, onEditCustomP
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-visible">
         <div className="bg-gradient-to-r from-indigo-50 to-white px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">
-            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white text-sm font-bold mr-3">3</span>
             Name & location
           </h2>
-          <p className="text-sm text-gray-500 mt-1 ml-11">Optional. Choose a country; for a single profile you can pick a specific location or leave it to auto-generate. For multiple profiles, each gets a random location from the selected country.</p>
+          <p className="text-sm text-gray-500 mt-1">Optional. Choose a country; for a single profile you can pick a specific location or leave it to auto-generate. For multiple profiles, each gets a random location from the selected country.</p>
         </div>
         <div className="p-6 space-y-6">
           <div>
@@ -1711,33 +1708,33 @@ export default function GenerateProfilesTab({ onAddCustomProperty, onEditCustomP
 
       {/* 4. Custom Properties */}
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-        <div className="bg-gradient-to-r from-indigo-50 to-white px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white text-sm font-bold mr-3">
-              4
-            </span>
-            Custom properties
-          </h2>
-          <p className="text-sm text-gray-500 mt-1 ml-11">
-            Optional properties to include on profiles. Define them in the Configure tab; toggle which to include here.
-          </p>
+        <div className="bg-gradient-to-r from-indigo-50 to-white px-6 py-4 border-b border-gray-200 flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white text-sm font-bold mr-3">
+                4
+              </span>
+              Custom properties
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Optional properties to include on profiles. Define them in the Configure tab; toggle which to include here.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (onAddCustomProperty) {
+                onAddCustomProperty()
+              } else {
+                router.push('/profiles?tab=configure&action=add')
+              }
+            }}
+            className="shrink-0 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors text-sm font-medium"
+          >
+            Add custom property
+          </button>
         </div>
         <div className="p-6 border border-t-0 border-gray-200 rounded-b-lg">
-          <div className="flex flex-wrap justify-end mb-4">
-            <button
-              type="button"
-              onClick={() => {
-                if (onAddCustomProperty) {
-                  onAddCustomProperty()
-                } else {
-                  router.push('/profiles?tab=configure&action=add')
-                }
-              }}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors text-sm font-medium"
-            >
-              Add property
-            </button>
-          </div>
           {availableProperties.length === 0 ? (
             <p className="text-sm text-gray-500 text-center py-2">
               No properties available. Configure properties first.

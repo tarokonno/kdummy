@@ -131,47 +131,53 @@ export default function SettingsPageClient() {
   return (
     <>
     <PageShell>
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-            <p className="mt-1 text-sm text-gray-500">
-              Manage your Klaviyo accounts and API keys. Each account's data is stored separately.
-            </p>
-          </div>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
+          <p className="mt-2 text-sm text-gray-600">
+            Manage your Klaviyo accounts and API keys. Each account&apos;s data is stored separately.
+          </p>
+        </div>
+        <div className="border-b border-gray-200 mb-6">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('accounts')}
+              className={`${
+                activeTab === 'accounts'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              Klaviyo Accounts
+            </button>
+            <button
+              onClick={() => setActiveTab('data')}
+              className={`${
+                activeTab === 'data'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              Data Storage Information
+            </button>
+          </nav>
+        </div>
 
-          <div className="p-6">
-            <div className="border-b border-gray-200 mb-6">
-              <nav className="-mb-px flex space-x-8">
+        {activeTab === 'accounts' && (
+          <div className="w-full rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="bg-gradient-to-r from-indigo-50 to-white px-6 py-4 border-b border-gray-200 flex items-center justify-between gap-3">
+              <h2 className="text-xl font-semibold text-gray-900">Klaviyo Accounts</h2>
+              {accounts.length > 0 && (
                 <button
-                  onClick={() => setActiveTab('accounts')}
-                  className={`${
-                    activeTab === 'accounts'
-                      ? 'border-indigo-500 text-indigo-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                  type="button"
+                  onClick={() => setShowAddForm(true)}
+                  className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                 >
-                  Klaviyo Accounts
+                  Add Account
                 </button>
-                <button
-                  onClick={() => setActiveTab('data')}
-                  className={`${
-                    activeTab === 'data'
-                      ? 'border-indigo-500 text-indigo-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-                >
-                  Data Storage Information
-                </button>
-              </nav>
+              )}
             </div>
-
-            {activeTab === 'accounts' && (
-              <>
-                <div className="w-full">
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-lg font-semibold text-gray-900">Klaviyo Accounts</h2>
-                  </div>
-                  {accounts.length === 0 ? (
+            <div className="p-6">
+              {accounts.length === 0 ? (
                     <button
                       type="button"
                       onClick={() => setShowAddForm(true)}
@@ -190,83 +196,68 @@ export default function SettingsPageClient() {
                       </div>
                     </button>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Add account tile */}
-                      <button
-                        type="button"
-                        onClick={() => setShowAddForm(true)}
-                        className="w-full text-left rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50 px-4 py-4 hover:bg-indigo-100 hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition flex flex-col justify-between"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="inline-flex items-center justify-center h-8 w-8 rounded-md bg-white text-indigo-600 border border-indigo-200">
-                            <span className="text-base leading-none">+</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {accounts.map((account) => (
+                    <div
+                      key={account.apiKey}
+                      className={`border rounded-lg p-4 ${
+                        activeApiKey === account.apiKey
+                          ? 'border-indigo-500 bg-indigo-50'
+                          : 'border-gray-200 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="text-lg font-semibold text-gray-900">{account.accountName}</h3>
+                            {activeApiKey === account.apiKey && (
+                              <span className="px-2 py-1 text-xs font-medium bg-indigo-600 text-white rounded">Active</span>
+                            )}
                           </div>
-                          <div>
-                            <h3 className="text-sm font-semibold text-gray-900">Add another account</h3>
-                            <p className="mt-1 text-xs text-gray-600 max-w-md">
-                              Connect additional Klaviyo accounts to keep demo data separate.
-                            </p>
-                          </div>
+                          <p className="text-sm text-gray-600 font-mono mb-2">{account.apiKey}</p>
+                          {account.listId && (
+                            <p className="text-xs text-gray-600 font-mono mb-1">List ID: {account.listId}</p>
+                          )}
+                          <p className="text-xs text-gray-500">Added: {new Date(account.createdAt).toLocaleDateString()}</p>
                         </div>
-                      </button>
-
-                      {accounts.map((account) => (
-                        <div
-                          key={account.apiKey}
-                          className={`border rounded-lg p-4 ${
-                            activeApiKey === account.apiKey
-                              ? 'border-indigo-500 bg-indigo-50'
-                              : 'border-gray-200 bg-white'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                <h3 className="text-lg font-semibold text-gray-900">{account.accountName}</h3>
-                                {activeApiKey === account.apiKey && (
-                                  <span className="px-2 py-1 text-xs font-medium bg-indigo-600 text-white rounded">Active</span>
-                                )}
-                              </div>
-                              <p className="text-sm text-gray-600 font-mono mb-2">{account.apiKey}</p>
-                              {account.listId && (
-                                <p className="text-xs text-gray-600 font-mono mb-1">List ID: {account.listId}</p>
-                              )}
-                              <p className="text-xs text-gray-500">Added: {new Date(account.createdAt).toLocaleDateString()}</p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {activeApiKey !== account.apiKey && (
-                                <button
-                                  onClick={() => handleSetActive(account.apiKey)}
-                                  className="px-3 py-1 text-sm text-indigo-600 hover:text-indigo-700 border border-indigo-600 rounded-md hover:bg-indigo-50"
-                                >
-                                  Set Active
-                                </button>
-                              )}
-                              <button
-                                onClick={() => handleEditAccount(account)}
-                                className="px-3 py-1 text-sm text-gray-700 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => handleDeleteAccount(account.apiKey)}
-                                className="px-3 py-1 text-sm text-red-600 hover:text-red-700 border border-red-300 rounded-md hover:bg-red-50"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </div>
+                        <div className="flex items-center gap-2">
+                          {activeApiKey !== account.apiKey && (
+                            <button
+                              onClick={() => handleSetActive(account.apiKey)}
+                              className="px-3 py-1 text-sm text-indigo-600 hover:text-indigo-700 border border-indigo-600 rounded-md hover:bg-indigo-50"
+                            >
+                              Set Active
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleEditAccount(account)}
+                            className="px-3 py-1 text-sm text-gray-700 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteAccount(account.apiKey)}
+                            className="px-3 py-1 text-sm text-red-600 hover:text-red-700 border border-red-300 rounded-md hover:bg-red-50"
+                          >
+                            Delete
+                          </button>
                         </div>
-                      ))}
+                      </div>
                     </div>
-                  )}
+                  ))}
                 </div>
-              </>
-            )}
+              )}
+            </div>
+          </div>
+        )}
 
-            {activeTab === 'data' && (
+        {activeTab === 'data' && (
+          <div className="w-full rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="bg-gradient-to-r from-indigo-50 to-white px-6 py-4 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">Data Storage Information</h2>
+            </div>
+            <div className="p-6">
               <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">Data Storage Information</h2>
                 <div className="space-y-4 text-sm text-gray-700">
                   <div>
                     <p className="font-medium mb-2">How Data is Stored:</p>
@@ -290,9 +281,9 @@ export default function SettingsPageClient() {
                   </div>
                 </div>
               </div>
-            )}
+            </div>
           </div>
-        </div>
+        )}
     </PageShell>
 
       <SettingsAccountModal

@@ -704,18 +704,16 @@ const ProfilePropertiesTab = forwardRef(function ProfilePropertiesTab(
       <div className={embeddedForGenerate ? 'hidden' : 'w-full'}>
         {configureHeader ? (
           <div className="w-full rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-            <div className="bg-gradient-to-r from-indigo-50 to-white px-6 py-4 border-b border-gray-200">
-              {configureHeader}
+            <div className="bg-gradient-to-r from-indigo-50 to-white px-6 py-4 border-b border-gray-200 flex items-center justify-between gap-4">
+              <div className="min-w-0">{configureHeader}</div>
+              <button
+                onClick={handleAdd}
+                className="shrink-0 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors text-sm font-medium"
+              >
+                Add custom property
+              </button>
             </div>
             <div className="p-6">
-              <div className="flex flex-wrap justify-end mb-4">
-                <button
-                  onClick={handleAdd}
-                  className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors text-sm font-medium"
-                >
-                  Add property
-                </button>
-              </div>
               {loading ? (
           <div className="p-8 text-center text-gray-500">Loading...</div>
         ) : properties.length === 0 ? (
