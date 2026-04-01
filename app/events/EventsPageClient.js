@@ -911,10 +911,9 @@ export default function EventsPageClient() {
                   Journey type & events
                 </h2>
                 <p className="text-sm text-gray-500 mt-1">
-                  Choose what type of journey (online, in-store, booking, or subscription), then which events to generate.
-                  In the next step you&apos;ll pick which items or industry template to use. K:Dummy auto appends
-                  <code className="bg-gray-100 px-1 rounded text-xs ml-1">(KD)</code> to your event names, so they appear as
-                  <span className="bg-gray-100 px-1 rounded text-xs ml-1">event name (KD)</span> upon event generation.
+                  Pick journey type, adjust settings, and choose events. Sent metrics include a{' '}
+                  <code className="bg-gray-100 px-1 rounded text-xs">(KD)</code> suffix (e.g.{' '}
+                  <span className="bg-gray-100 px-1 rounded text-xs">event name (KD)</span>).
                 </p>
               </div>
               <div className="p-6">
@@ -1170,7 +1169,8 @@ export default function EventsPageClient() {
                   Event Data
                 </h2>
                 <p className="text-sm text-gray-500 mt-1">
-                  Choose where item data comes from, then which items to use in generated events. You can <button type="button" onClick={() => setEventsTab('preview')} className="text-indigo-600 hover:text-indigo-800 font-medium">preview event payloads</button> in the other tab.
+                  Catalog or template items, then select rows to use.{' '}
+                  <button type="button" onClick={() => setEventsTab('preview')} className="text-indigo-600 hover:text-indigo-800 font-medium">Preview payloads</button> in the Preview tab.
                 </p>
               </div>
               <div className="p-6 space-y-6">
@@ -1500,7 +1500,15 @@ export default function EventsPageClient() {
                 )}
 
                 {(needsProducts && productsCount === 0) || (needsServices && servicesCount === 0) || (needsSubscriptions && subscriptionsCount === 0) ? (
-                  journey && (needsProducts || needsServices || needsSubscriptions) && <p className="text-sm text-amber-600">Select at least one item above (or pick a default template and choose a template) before continuing.</p>
+                  journey &&
+                  (needsProducts || needsServices || needsSubscriptions) && (
+                    <div
+                      role="status"
+                      className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+                    >
+                      Select at least one item, or choose Template Items and pick a template.
+                    </div>
+                  )
                 ) : null}
               </div>
             </div>
@@ -1513,7 +1521,7 @@ export default function EventsPageClient() {
                 <h2 className="text-lg font-semibold text-gray-900">
                   Profile assignment
                 </h2>
-                <p className="text-sm text-gray-500 mt-1">Who should the generated events be attributed to?</p>
+                <p className="text-sm text-gray-500 mt-1">New random profiles or existing profiles from this account.</p>
               </div>
               <div className="p-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1586,13 +1594,21 @@ export default function EventsPageClient() {
                               </div>
                             )}
                           </div>
-                          {!getActiveApiKey() && <p className="px-4 py-2 text-xs text-amber-600 border-b border-gray-100">Set your API key in Settings to load profiles.</p>}
+                          {!getActiveApiKey() && (
+                            <div className="border-b border-amber-200 bg-amber-50 px-4 py-2">
+                              <p className="text-xs text-amber-900">Set your API key in Settings to load profiles.</p>
+                            </div>
+                          )}
                           {availableProfiles.length === 0 && !profilesLoadError && getActiveApiKey() && (
                             <div className="p-4 border-b border-gray-100">
                               <button type="button" onClick={loadProfiles} className="text-sm font-medium text-indigo-600 hover:text-indigo-800">Load profiles from account</button>
                             </div>
                           )}
-                          {profilesLoadError && <p className="px-4 py-2 text-xs text-amber-600 border-b border-gray-100">{profilesLoadError}</p>}
+                          {profilesLoadError && (
+                            <div className="border-b border-amber-200 bg-amber-50 px-4 py-2">
+                              <p className="text-xs text-amber-900">{profilesLoadError}</p>
+                            </div>
+                          )}
                           {availableProfiles.length > 0 && (
                             <>
                               <div className="p-2 border-b border-gray-100 shrink-0">
@@ -1678,14 +1694,38 @@ export default function EventsPageClient() {
             </div>
 
             {/* Continue to review: outside section, bottom right */}
-            <div className="flex justify-end items-center gap-3 flex-wrap">
-              {!hasEnoughData && <span className="text-sm text-amber-600">Select at least one item above first.</span>}
-              {profileMode === 'selected' && selectedProfileIds.length === 0 && hasEnoughData && <span className="text-sm text-amber-600">Load and select profiles, or use generated.</span>}
+            <div className="flex w-full flex-col items-stretch gap-3 sm:items-end">
+              <div className="w-full space-y-2 sm:max-w-xl sm:ml-auto">
+                {selectedEventNames.length === 0 && (
+                  <div
+                    role="status"
+                    className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+                  >
+                    Select at least one event in Journey type &amp; events.
+                  </div>
+                )}
+                {!hasEnoughData && (
+                  <div
+                    role="status"
+                    className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+                  >
+                    Finish Event Data: select items or a template where required.
+                  </div>
+                )}
+                {profileMode === 'selected' && selectedProfileIds.length === 0 && hasEnoughData && (
+                  <div
+                    role="status"
+                    className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+                  >
+                    Load and select profiles, or choose Create new profiles.
+                  </div>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={() => setShowReviewModal(true)}
                 disabled={selectedEventNames.length === 0 || !hasEnoughData || (profileMode === 'selected' && selectedProfileIds.length === 0)}
-                className="inline-flex items-center rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed sm:self-end"
               >
                 Continue to review
               </button>

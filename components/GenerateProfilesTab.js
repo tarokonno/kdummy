@@ -1159,7 +1159,7 @@ export default function GenerateProfilesTab({ onAddCustomProperty, onEditCustomP
           <h2 className="text-lg font-semibold text-gray-900">
             Profile count
           </h2>
-          <p className="text-sm text-gray-500 mt-1">Single profile or multiple (2–100). Country and location are set in Name &amp; location below.</p>
+          <p className="text-sm text-gray-500 mt-1">One profile or many (2–100). Country and location are set below.</p>
         </div>
         <div className="p-6">
           <div className="max-w-xl">
@@ -1195,86 +1195,43 @@ export default function GenerateProfilesTab({ onAddCustomProperty, onEditCustomP
                     if (count < 2) setCount(2)
                   }
                 }}
-                className={`w-1/2 min-h-[88px] flex flex-row items-start justify-between gap-2 p-4 rounded-lg border-2 text-left transition-colors cursor-pointer ${
+                className={`w-1/2 min-h-[88px] grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 p-4 rounded-lg border-2 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${
                   !profileModeSingle
                     ? 'border-indigo-600 bg-indigo-50/80 text-indigo-900 shadow-sm'
-                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 cursor-pointer'
                 }`}
               >
                 <div className="min-w-0">
                   <span className="text-sm font-medium block">Multiple</span>
                   <span className="text-xs text-gray-500 mt-0.5 block">2–100 profiles</span>
                 </div>
-                <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                  <button
-                    type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      setCount((prev) => Math.max(2, prev - 1))
-                      const id = setInterval(() => {
-                        setCount((prev) => {
-                          if (prev <= 2) {
-                            clearInterval(id)
-                            return 2
-                          }
-                          return prev - 1
-                        })
-                      }, 120)
-                      const stop = () => {
-                        clearInterval(id)
-                        document.removeEventListener('mouseup', stop)
-                        document.removeEventListener('mouseleave', stop)
-                      }
-                      document.addEventListener('mouseup', stop)
-                      document.addEventListener('mouseleave', stop)
-                    }}
-                    className="h-7 w-7 flex items-center justify-center rounded border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
-                    aria-label="Decrease profile count"
-                  >
-                    −
-                  </button>
-                  <input
-                    type="number"
-                    min={2}
-                    max={100}
-                    value={count}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value, 10)
-                      if (!Number.isNaN(val)) setCount(Math.min(Math.max(val, 2), 100))
-                    }}
+                {!profileModeSingle && (
+                  <div
+                    className="shrink-0"
                     onClick={(e) => e.stopPropagation()}
-                    className="w-14 h-9 px-2 border border-gray-300 rounded-md text-sm text-center focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  />
-                  <button
-                    type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      setCount((prev) => Math.min(100, prev + 1))
-                      const id = setInterval(() => {
-                        setCount((prev) => {
-                          if (prev >= 100) {
-                            clearInterval(id)
-                            return 100
-                          }
-                          return prev + 1
-                        })
-                      }, 120)
-                      const stop = () => {
-                        clearInterval(id)
-                        document.removeEventListener('mouseup', stop)
-                        document.removeEventListener('mouseleave', stop)
-                      }
-                      document.addEventListener('mouseup', stop)
-                      document.addEventListener('mouseleave', stop)
-                    }}
-                    className="h-7 w-7 flex items-center justify-center rounded border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
-                    aria-label="Increase profile count"
+                    onKeyDown={(e) => e.stopPropagation()}
                   >
-                    +
-                  </button>
-                </div>
+                    <label htmlFor="profile-count-multiple" className="sr-only">
+                      Number of profiles (2–100)
+                    </label>
+                    <input
+                      id="profile-count-multiple"
+                      type="number"
+                      min={2}
+                      max={100}
+                      value={count}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10)
+                        if (!Number.isNaN(val)) setCount(Math.min(Math.max(val, 2), 100))
+                      }}
+                      onBlur={() => {
+                        setCount((c) => Math.min(100, Math.max(2, c)))
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-[6.5rem] h-9 px-2 border border-gray-300 rounded-md text-sm text-center focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1414,9 +1371,7 @@ export default function GenerateProfilesTab({ onAddCustomProperty, onEditCustomP
           <h2 className="text-lg font-semibold text-gray-900">
             Identifiers & consent
           </h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Choose which identifiers you set on profiles and which channels to opt profiles into.
-          </p>
+          <p className="text-sm text-gray-500 mt-1">Identifiers and optional marketing consent.</p>
         </div>
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-4">
@@ -1439,17 +1394,40 @@ export default function GenerateProfilesTab({ onAddCustomProperty, onEditCustomP
                 )}
               </div>
               <div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Toggle
                     checked={includePhone}
                     onChange={setIncludePhone}
                     disabled={count > 1}
                   />
-                  <span className={`text-sm font-medium ${count > 1 ? 'text-gray-400' : 'text-gray-700'}`}>Phone</span>
+                  {count > 1 ? (
+                    <span className="relative inline-flex items-center gap-1.5 group">
+                      <span className="text-sm font-medium text-gray-400 cursor-help border-b border-dotted border-gray-400">
+                        Phone
+                      </span>
+                      <svg
+                        className="h-4 w-4 shrink-0 text-amber-600 cursor-help"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span
+                        role="tooltip"
+                        className="pointer-events-none absolute left-0 top-full z-20 mt-1.5 w-max max-w-[min(18rem,calc(100vw-2rem))] rounded-md bg-gray-900 px-2.5 py-2 text-xs font-normal leading-snug text-white shadow-lg opacity-0 transition-opacity duration-150 group-hover:opacity-100"
+                      >
+                        Phone is off for multiple profiles because random numbers could match real lines. We skip bulk phone generation for safety.
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="text-sm font-medium text-gray-700">Phone</span>
+                  )}
                 </div>
-                {count > 1 && (
-                  <p className="text-xs text-amber-600 mt-1">Not available when generating multiple profiles (to avoid accidental real SMS).</p>
-                )}
                 {count === 1 && includePhone && (
                   <input
                     type="tel"
@@ -1561,7 +1539,7 @@ export default function GenerateProfilesTab({ onAddCustomProperty, onEditCustomP
           <h2 className="text-lg font-semibold text-gray-900">
             Name & location
           </h2>
-          <p className="text-sm text-gray-500 mt-1">Optional. Choose a country; for a single profile you can pick a specific location or leave it to auto-generate. For multiple profiles, each gets a random location from the selected country.</p>
+          <p className="text-sm text-gray-500 mt-1">Optional name and address. One profile: country, optional catalog location, or auto. Many: random address per profile from the country.</p>
         </div>
         <div className="p-6 space-y-6">
           <div>
@@ -1609,19 +1587,14 @@ export default function GenerateProfilesTab({ onAddCustomProperty, onEditCustomP
             {includeLocation && (
               <>
                 {count === 1 ? (
-                  <p className="text-xs text-gray-500 mb-3">
-                    Country and location determine address and locale. Pick a specific location or leave it blank to
-                    auto-generate from the selected country.
-                  </p>
+                  <p className="text-xs text-gray-500 mb-3">Country drives locale; optional catalog location or auto address.</p>
                 ) : (
-                  <p className="text-xs text-gray-500 mb-3">
-                    For multiple profiles, each profile receives a random location from the selected country.
-                  </p>
+                  <p className="text-xs text-gray-500 mb-3">Each profile gets a random address in the chosen country.</p>
                 )}
 
                 {count === 1 ? (
                   <div className="mt-2 space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
                         <select
@@ -1639,7 +1612,7 @@ export default function GenerateProfilesTab({ onAddCustomProperty, onEditCustomP
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Pick a location (optional)</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Location (optional)</label>
                         <select
                           value={selectedLocationId}
                           onChange={(e) => setSelectedLocationId(e.target.value)}
@@ -1651,12 +1624,10 @@ export default function GenerateProfilesTab({ onAddCustomProperty, onEditCustomP
                           ))}
                         </select>
                       </div>
+                      <div />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 mb-2">
-                        Address fields are filled from the chosen location or can be edited manually. Leave location
-                        blank to generate an address from the selected country.
-                      </p>
+                      <p className="text-xs text-gray-500 mb-2">Prefilled from location or edit manually; blank location uses the country only.</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {[
                           { label: 'Address', value: locationAddress, set: setLocationAddress, placeholder: 'Street' },
@@ -1682,7 +1653,8 @@ export default function GenerateProfilesTab({ onAddCustomProperty, onEditCustomP
                   </div>
                 ) : (
                   <div className="mt-2 space-y-3">
-                    <div className="max-w-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
                       <select
                         value={selectedCountries[0] || ''}
@@ -1697,6 +1669,9 @@ export default function GenerateProfilesTab({ onAddCustomProperty, onEditCustomP
                           ))
                         )}
                       </select>
+                      </div>
+                      <div />
+                      <div />
                     </div>
                   </div>
                 )}
@@ -1716,9 +1691,7 @@ export default function GenerateProfilesTab({ onAddCustomProperty, onEditCustomP
               </span>
               Custom properties
             </h2>
-            <p className="text-sm text-gray-500 mt-1">
-              Optional properties to include on profiles. Define them in the Configure tab; toggle which to include here.
-            </p>
+            <p className="text-sm text-gray-500 mt-1">Include configured properties (set them up under Configure).</p>
           </div>
           <button
             type="button"
